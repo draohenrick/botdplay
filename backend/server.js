@@ -3,28 +3,35 @@ const http = require('http');
 const { Server } = require("socket.io");
 const cors = require('cors');
 const bodyParser = require('body-parser');
-const bcrypt = require('bcryptjs');
 const path = require('path');
-const multer = require('multer');
 const fs = require('fs');
-const db = require('./db');
-const BotInstance = require('./BotInstance');
-const authMiddleware = require('./middleware/authMiddleware');
-const authRoutes = require('./routes/auth');
+const multer = require('multer');
 
+// --- Nossos Módulos ---
+const db = require('./db'); // Módulo de banco de dados
+const BotInstance = require('./BotInstance'); // Módulo de instâncias do Bot
+const authMiddleware = require('./middleware/authMiddleware'); // Middleware de autenticação
+const authRoutes = require('./routes/auth'); // Arquivo de rotas para login/registro
+
+// --- Configuração Inicial ---
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: "*",
+        origin: "*", // Permite acesso de qualquer origem
         methods: ["GET", "POST", "PUT", "DELETE"]
     }
 });
 
 const PORT = process.env.PORT || 3001;
+
+// --- Middlewares Globais ---
 app.use(cors());
 app.use(bodyParser.json());
 
+// --- Configuração de Pastas (Uploads e Sessões) ---
+// ATENÇÃO: Lembre-se que no Render gratuito, esta pasta será apagada em cada deploy.
+// Para persistir, use o "Disk" do Render (plano pago).
 const DATA_DIR = process.env.NODE_ENV === 'production' ? '/data' : path.join(__dirname);
 const UPLOADS_DIR = path.join(DATA_DIR, 'uploads');
 
@@ -40,38 +47,50 @@ const storage = multer.diskStorage({
     }
 });
 const upload = multer({ storage: storage });
-
 app.use('/uploads', express.static(UPLOADS_DIR));
 
+// --- Gerenciamento de Instâncias Ativas ---
 const activeInstances = new Map();
 
-function startBotInstance(instanceConfig) {
-    if (activeInstances.has(instanceConfig.id)) return;
-    const bot = new BotInstance(instanceConfig, io);
-    bot.initialize().catch(err => {
-        console.error(`[Servidor] Falha ao inicializar instância ${instanceConfig.id}:`, err);
-        db.updateInstance(instanceConfig.id, { status: 'error' });
-    });
-    activeInstances.set(instanceConfig.id, bot);
-}
+// (Aqui entrariam suas funções startBotInstance e stopBotInstance)
 
-async function stopBotInstance(instanceId) {
-    if (activeInstances.has(instanceId)) {
-        const bot = activeInstances.get(instanceId);
-        if (bot && typeof bot.stop === 'function') await bot.stop();
-        activeInstances.delete(instanceId);
-        console.log(`[Servidor] Instância ${instanceId} parada.`);
-    }
-}
 
-app.use('/api/auth', authRoutes);
+// --- DEFINIÇÃO DE ROTAS ---
+
+// Rotas públicas (não precisam de login)
+app.use('/api/auth', authRoutes); // IMPORTANTE: Define o prefixo para as rotas de autenticação (login, registro)
+
+// A partir daqui, todas as rotas precisam de um token válido
 app.use(authMiddleware);
 
-// API de Instâncias
-app.get('/api/instances', (req, res) => res.json(db.getInstances().filter(i => i.ownerId === req.user.id)));
-
-// ... (restante das rotas, como nas respostas anteriores)
-
-server.listen(PORT, () => {
-    console.log(`🚀 Servidor Dplay SaaS rodando na porta ${PORT}`);
+// Rotas protegidas (precisam de login)
+app.get('/api/instances', async (req, res) => {
+    try {
+        const allInstances = await db.getInstances();
+        // Filtra para retornar apenas as instâncias do usuário logado
+        res.json(allInstances.filter(i => i.ownerId === req.user.id));
+    } catch (error) {
+        console.error("Erro ao buscar instâncias:", error);
+        res.status(500).json({ error: 'Erro ao buscar instâncias.' });
+    }
 });
+
+// (Aqui entrariam suas outras rotas de API protegidas)
+
+
+// --- INICIALIZAÇÃO DO SERVIDOR ---
+const startServer = async () => {
+    try {
+        // IMPORTANTE: Conecta ao banco de dados ANTES de iniciar o servidor
+        await db.connectToDatabase(); 
+        
+        server.listen(PORT, () => {
+            console.log(`🚀 Servidor Dplay SaaS rodando na porta ${PORT}`);
+        });
+    } catch (error) {
+        console.error("❌ Falha crítica ao iniciar o servidor:", error);
+        process.exit(1);
+    }
+};
+
+startServer();
