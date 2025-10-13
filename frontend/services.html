@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Configurar Bot - Dplay Bot</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="css/style.css" rel="stylesheet">
+<style>
+:root { --border-color: #dee2e6; --primary-color: #0d6efd; }
+body { font-family: 'Poppins', sans-serif; background-color: #eef2f6; }
+.sidebar .nav-link.active { font-weight: 600; color: var(--primary-color); background-color: transparent; }
+.sidebar .nav-link:hover { color: var(--primary-color); background-color: #e9ecef; }
+.details-pre { background-color: #f8f9fa; border: 1px solid var(--border-color); border-radius: .25rem; padding: 1rem; max-height: 200px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; font-size: 0.8rem; }
+.loading-spinner { display: flex; justify-content: center; align-items: center; height: 150px; }
+.card-body .btn { font-weight: 500; }
+</style>
+</head>
+<body>
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+            <div class="position-sticky sidebar-sticky">
+                <div class="text-center my-4">
+                    <img id="user-logo" src="" alt="Logo do Cliente" style="display: none; max-width: 120px; max-height: 60px;">
+                    <h6 id="user-logo-text" class="sidebar-heading px-3 text-dark"><span>Dplay Bot</span></h6>
+                </div>
+                <ul class="nav flex-column" style="height: calc(95% - 80px);">
+                    <li class="nav-item"><a class="nav-link" href="index.html">Dashboard</a></li>
+                    <li class="nav-item"><a class="nav-link" href="instances.html">Conexões</a></li>
+                    <li class="nav-item"><a class="nav-link" href="conversations.html">Conversas</a></li>
+                    <li class="nav-item"><a class="nav-link" href="leads.html">Leads</a></li>
+                    <li class="nav-item"><a class="nav-link active" aria-current="page" href="services.html">Configurar Bot</a></li>
+                    <li class="nav-item"><a class="nav-link" href="usuarios.html">Usuários</a></li>
+                    <li class="nav-item mt-auto"><a class="nav-link" href="account.html">Minha Conta</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#" onclick="logout()">Logout</a></li>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- Main -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+            <div class="page-header d-flex justify-content-between align-items-center mt-4">
+                <h1>Configurar Serviços do Bot</h1>
+            </div>
+
+            <div id="alertPlaceholder"></div>
+
+            <!-- Formulário de Serviço -->
+            <div class="card mb-4">
+                <div class="card-header" id="form-title">Adicionar Novo Serviço</div>
+                <div class="card-body">
+                    <form id="formService">
+                        <input type="hidden" id="serviceId">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="label" class="form-label">Nome do Serviço</label>
+                                <input type="text" class="form-control" id="label" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="keywords" class="form-label">Palavras-chave</label>
+                                <input type="text" class="form-control" id="keywords" placeholder="suporte, ajuda, problema">
+                            </div>
+                            <div class="col-12">
+                                <label for="description" class="form-label">Descrição (Opcional)</label>
+                                <textarea class="form-control" id="description" rows="2"></textarea>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="valor" class="form-label">Valor de Referência (Opcional)</label>
+                                <input type="text" class="form-control" id="valor" placeholder="R$ 100,00">
+                            </div>
+                        </div>
+                        <hr>
+                        <h5 class="mb-3">Perguntas de Qualificação (Briefing)</h5>
+                        <div id="questions-container"></div>
+                        <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="add-question">+ Adicionar Pergunta</button>
+                        <hr>
+                        <button type="submit" id="saveServiceBtn" class="btn btn-primary">Salvar Serviço</button>
+                        <button type="button" class="btn btn-light" id="cancel-edit" style="display: none;">Cancelar Edição</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Lista de Serviços -->
+            <div class="card">
+                <div class="card-header">Serviços Atuais</div>
+                <div class="card-body">
+                    <div id="servicesList" class="loading-spinner">
+                        <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Carregando...</span></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/auth.js"></script>
+<script>
+protectPage();
+
+const form = document.getElementById('formService');
+const serviceIdInput = document.getElementById('serviceId');
+const formTitle = document.getElementById('form-title');
+const servicesList = document.getElementById('servicesList');
+const questionsContainer = document.getElementById('questions-container');
+const addQuestionBtn = document.getElementById('add-question');
+const cancelEditBtn = document.getElementById('cancel-edit');
+const saveServiceBtn = document.getElementById('saveServiceBtn');
+
+let allServices = [];
+
+function showAlert(message, type = 'info') {
+    const alertPlaceholder = document.getElementById('alertPlaceholder');
+    alertPlaceholder.innerHTML = `
+        <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    `;
+}
+
+async function loadServices() {
+    servicesList.innerHTML = `<div class="loading-spinner"><div class="spinner-border text-primary" role="status"></div></div>`;
+    try {
+        const res = await fetch(`${BASE_URL}/api/services`);
+        if(res.status === 401 || res.status === 403) return logout();
+
+        let data = null;
+        const text = await res.text();
+        if(text) {
+            try { data = JSON.parse(text); } 
+            catch { data = null; }
+        }
+        if(!res.ok) throw new Error(data?.error || 'Falha ao carregar serviços do servidor.');
+
+        allServices = data || [];
+        renderServices(allServices);
+    } catch (e) {
+        showAlert(e.message, 'danger');
+        servicesList.innerHTML = `<p class="text-danger text-center">${e.message}</p>`;
+    }
+}
+
+function renderServices(services) {
+    servicesList.innerHTML = '';
+    if(services.length === 0) {
+        servicesList.innerHTML = '<p class="text-center text-muted">Nenhum serviço configurado. Crie o primeiro no formulário acima!</p>';
+        return;
+    }
+    services.forEach(s => {
+        const serviceEl = document.createElement('div');
+        serviceEl.className = 'list-group-item d-flex justify-content-between align-items-center';
+        serviceEl.innerHTML = `
+            <div>
+                <h6 class="mb-1">${s.label}</h6>
+                <small class="text-muted">Palavras-chave: ${s.keywords?.join(', ') || 'N/A'}</small>
+            </div>
+            <div>
+                <button class="btn btn-outline-primary btn-sm" onclick="editService(${s.id})">Editar</button>
+                <button class="btn btn-outline-danger btn-sm ms-2" onclick="deleteService(${s.id}, this)">Excluir</button>
+            </div>
+        `;
+        servicesList.appendChild(serviceEl);
+    });
+}
+
+form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const serviceId = serviceIdInput.value;
+    const originalBtnHtml = saveServiceBtn.innerHTML;
+    saveServiceBtn.disabled = true;
+    saveServiceBtn.innerHTML = `<span class="spinner-border spinner-border-sm"></span> Salvando...`;
+
+    const briefing_questions = Array.from(questionsContainer.children).map(qDiv => ({
+        key: qDiv.querySelector('.question-key').value.trim(),
+        q: qDiv.querySelector('.question-text').value.trim()
+    })).filter(q => q.key && q.q);
+
+    const serviceData = {
+        label: document.getElementById('label').value.trim(),
+        keywords: document.getElementById('keywords').value.split(',').map(k => k.trim()).filter(Boolean),
+        description: document.getElementById('description').value.trim(),
+        valor: document.getElementById('valor').value.trim(),
+        briefing_questions
+    };
+
+    const method = serviceId ? 'PUT' : 'POST';
+    const url = serviceId ? `${BASE_URL}/api/services/${serviceId}` : `${BASE_URL}/api/services`;
+
+    try {
+        const res = await fetch(url, { method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(serviceData) });
+        let data = null;
+        const text = await res.text();
+        if(text) { try { data = JSON.parse(text); } catch{} }
+        if(!res.ok) throw new Error(data?.error || 'Falha ao salvar serviço.');
+
+        showAlert('Serviço salvo com sucesso!', 'success');
+        resetForm();
+        await loadServices();
+    } catch(err) {
+        showAlert(err.message, 'danger');
+    } finally {
+        saveServiceBtn.disabled = false;
+        saveServiceBtn.innerHTML = originalBtnHtml;
+    }
+});
+
+addQuestionBtn.addEventListener('click', () => addQuestionField());
+
+function addQuestionField(key = '', q = '') {
+    const questionDiv = document.createElement('div');
+    questionDiv.className = 'input-group mb-2';
+    questionDiv.innerHTML = `
+        <input type="text" class="form-control question-key" placeholder="Chave (ex: objetivo_principal)" value="${key}" required>
+        <input type="text" class="form-control question-text" placeholder="Texto da Pergunta (ex: Qual seu principal objetivo?)" value="${q}" required>
+        <button class="btn btn-outline-danger" type="button" onclick="this.parentElement.remove()">×</button>
+    `;
+    questionsContainer.appendChild(questionDiv);
+}
+
+function editService(id) {
+    const service = allServices.find(s => s.id === id);
+    if(!service) return;
+
+    resetForm();
+    serviceIdInput.value = service.id;
+    document.getElementById('label').value = service.label;
+    document.getElementById('keywords').value = (service.keywords || []).join(', ');
+    document.getElementById('description').value = service.description || '';
+    document.getElementById('valor').value = service.valor || '';
+    (service.briefing_questions || []).forEach(q => addQuestionField(q.key, q.q));
+
+    formTitle.innerText = 'Editando Serviço';
+    cancelEditBtn.style.display = 'inline-block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+async function deleteService(id, btn) {
+    if(!confirm('Tem certeza que deseja excluir este serviço?')) return;
+    const originalBtnHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner-border spinner-border-sm"></span>`;
+    try {
+        const res = await fetch(`${BASE_URL}/api/services/${id}`, { method:'DELETE' });
+        let data = null;
+        const text = await res.text();
+        if(text) { try { data = JSON.parse(text); } catch{} }
+        if(!res.ok) throw new Error(data?.error || 'Falha ao excluir.');
+
+        showAlert('Serviço excluído.', 'success');
+        await loadServices();
+    } catch(e) {
+        showAlert(e.message, 'danger');
+        btn.disabled = false;
+        btn.innerHTML = originalBtnHtml;
+    }
+}
+
+function resetForm() {
+    form.reset();
+    serviceIdInput.value = '';
+    questionsContainer.innerHTML = '';
+    formTitle.innerText = 'Adicionar Novo Serviço';
+    cancelEditBtn.style.display = 'none';
+}
+
+cancelEditBtn.addEventListener('click', resetForm);
+
+window.addEventListener('DOMContentLoaded', () => {
+    loadUserData();
+    loadServices();
+});
+</script>
+</body>
+</html>

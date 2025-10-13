@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Registro - Dplay Bot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+    <style> body { background-color: var(--body-bg, #eef2f6); } </style>
+</head>
+<body class="d-flex align-items-center justify-content-center vh-100">
+    <div class="card shadow-sm" style="width: 25rem;">
+        <div class="card-body p-4">
+            <div class="text-center mb-4">
+                <img src="https://via.placeholder.com/150x50.png?text=Sua+Logo" alt="Logo" class="mb-3" style="max-width: 150px;">
+                <h3 class="fw-bold">Crie sua Conta</h3>
+                <p class="text-muted">Comece a automatizar seu atendimento.</p>
+            </div>
+            <div id="alertPlaceholder"></div>
+            <form id="registerForm" novalidate>
+                 <div class="mb-3">
+                    <label for="nome" class="form-label">Nome Completo</label>
+                    <input type="text" class="form-control" id="nome" required autocomplete="name">
+                </div>
+                <div class="mb-3">
+                    <label for="nomeEstabelecimento" class="form-label">Nome do Estabelecimento (Opcional)</label>
+                    <input type="text" class="form-control" id="nomeEstabelecimento">
+                </div>
+                <div class="mb-3">
+                    <label for="email" class="form-label">Email</label>
+                    <input type="email" class="form-control" id="email" required autocomplete="email">
+                </div>
+                <div class="mb-3">
+                    <label for="password" class="form-label">Senha</label>
+                    <input type="password" class="form-control" id="password" required autocomplete="new-password">
+                </div>
+                <button type="submit" id="submitButton" class="btn btn-primary w-100 mt-3">Registrar</button>
+            </form>
+            <div class="text-center mt-3">
+                <a href="login.html">Já tem uma conta? Faça login</a>
+            </div>
+        </div>
+    </div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/auth.js"></script>
+<script>
+    const form = document.getElementById('registerForm');
+    const submitButton = document.getElementById('submitButton');
+    
+    document.addEventListener('DOMContentLoaded', () => {
+        redirectIfLoggedIn();
+    });
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const originalButtonText = submitButton.innerHTML;
+        submitButton.disabled = true;
+        submitButton.innerHTML = `<span class="spinner-border spinner-border-sm"></span> Registrando...`;
+
+        const userData = {
+            nome: document.getElementById('nome').value,
+            nomeEstabelecimento: document.getElementById('nomeEstabelecimento').value,
+            email: document.getElementById('email').value,
+            password: document.getElementById('password').value
+        };
+
+        try {
+            const res = await fetch(`${BASE_URL}/api/auth/register`, {
+                method: 'POST',
+                body: JSON.stringify(userData)
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error);
+            
+            showAlert(data.message + ' Redirecionando para o login...', 'success');
+            setTimeout(() => { window.location.href = 'login.html'; }, 2000);
+
+        } catch (error) {
+            showAlert(error.message, 'danger');
+            submitButton.disabled = false;
+            submitButton.innerHTML = originalButtonText;
+        }
+    });
+</script>
+</body>
+</html>
