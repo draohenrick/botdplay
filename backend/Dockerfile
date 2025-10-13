@@ -1,7 +1,7 @@
 # Usa uma imagem oficial e leve do Node.js
 FROM node:18-slim
 
-# CORREÇÃO: Instala a lista de dependências de sistema correta e atualizada
+# Instala as dependências de sistema corretas e atualizadas
 # para o Puppeteer/Chrome rodar no ambiente da Render.
 RUN apt-get update && apt-get install -y \
     ca-certificates \
@@ -44,14 +44,14 @@ RUN apt-get update && apt-get install -y \
     xdg-utils \
     --no-install-recommends
 
+# Define o caminho para o executável do Chrome para o Puppeteer encontrar
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
+
 # Define o diretório de trabalho
 WORKDIR /usr/src/app
 
 # Copia os arquivos de dependência
 COPY package*.json ./
-
-# Copia a biblioteca local antes de instalar
-COPY libs ./libs
 
 # Instala apenas as dependências de produção
 RUN npm install --omit=dev
