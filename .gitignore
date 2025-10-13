@@ -1,0 +1,9 @@
+# Ignorar dependências do Node
+backend/node_modules/
+
+# Ignorar sessões locais e de produção do WhatsApp
+backend/.wwebjs_auth/
+backend/data/wwebjs_auth/
+
+# Arquivos de ambiente
+backend/.env
