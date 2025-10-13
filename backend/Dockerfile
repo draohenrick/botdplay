@@ -4,6 +4,7 @@ FROM node:18-slim
 # Instala as dependências de sistema corretas e atualizadas
 # para o Puppeteer/Chrome rodar no ambiente da Render.
 RUN apt-get update && apt-get install -y \
+    git \
     ca-certificates \
     fonts-liberation \
     libappindicator3-1 \
