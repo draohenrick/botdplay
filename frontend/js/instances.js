@@ -1,60 +1,99 @@
+// URL do backend
 const BACKEND_URL = 'https://botdplay.onrender.com';
 
-const logoutButton = document.getElementById('logout-button'); // Assumindo que você tem um botão de logout em todas as páginas
+// Elementos da página
+const instancesContainer = document.getElementById('instances-container');
+const logoutLinks = document.querySelectorAll('[onclick="logout()"]'); // Todos links de logout
 
-// --- Lógica de Proteção e Carregamento de Dados ---
-async function loadInstancesPage() {
-    // 1. Pega o token salvo no localStorage
+// Função para proteger página
+function protectPage() {
     const token = localStorage.getItem('authToken');
-
     if (!token) {
-        // Se NÃO houver token, redireciona para o login
-        alert('Acesso negado. Por favor, faça login para continuar.');
+        alert('Acesso negado. Faça login para continuar.');
         window.location.href = '/login.html';
-        return;
     }
+}
 
-    // 2. Se houver token, busca os dados das instâncias
+// Função para carregar as instâncias
+async function loadInstancesPage() {
+    const token = localStorage.getItem('authToken');
+    if (!token) return;
+
     try {
-        // ROTA ESPECÍFICA DESTA PÁGINA
         const response = await fetch(`${BACKEND_URL}/api/instances`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}` // Envia o token
+                'Authorization': `Bearer ${token}`
             }
         });
 
         if (response.status === 401 || response.status === 403) {
-            // Se o token for inválido/expirado
             localStorage.removeItem('authToken');
-            alert('Sua sessão expirou. Por favor, faça login novamente.');
+            alert('Sua sessão expirou. Faça login novamente.');
             window.location.href = '/login.html';
             return;
         }
 
-        const data = await response.json();
+        const instances = await response.json();
 
-        // 3. FAÇA ALGO COM OS DADOS
-        // Exemplo: exiba as instâncias na tela
-        console.log('Instâncias recebidas:', data);
-        const dataContainer = document.getElementById('instances-container'); // Crie um elemento com este ID no seu HTML
-        if(dataContainer) dataContainer.textContent = JSON.stringify(data, null, 2);
+        if (instancesContainer) {
+            if (instances.length === 0) {
+                instancesContainer.textContent = 'Nenhuma conexão encontrada.';
+                return;
+            }
 
+            // Limpa container
+            instancesContainer.innerHTML = '';
+
+            // Cria cards ou listas para cada instância
+            instances.forEach(inst => {
+                const card = document.createElement('div');
+                card.className = 'card mb-2';
+                card.innerHTML = `
+                    <div class="card-body d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>${inst.name}</strong><br>
+                            Status: ${inst.status}
+                        </div>
+                        <div>
+                            <button class="btn btn-sm btn-primary me-2" onclick="editInstance('${inst.id}')">Editar</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteInstance('${inst.id}')">Excluir</button>
+                        </div>
+                    </div>
+                `;
+                instancesContainer.appendChild(card);
+            });
+        }
 
     } catch (error) {
-        console.error('Erro ao carregar os dados da página de instâncias:', error);
+        if (instancesContainer) instancesContainer.textContent = 'Erro ao carregar as conexões.';
+        console.error('Erro ao carregar as instâncias:', error);
     }
 }
 
-// --- Lógica do Botão de Logout ---
-if (logoutButton) {
-    logoutButton.addEventListener('click', () => {
-        localStorage.removeItem('authToken');
-        alert('Você saiu com sucesso.');
-        window.location.href = '/login.html';
-    });
+// Função de logout
+function logout() {
+    localStorage.removeItem('authToken');
+    alert('Você saiu com sucesso.');
+    window.location.href = '/login.html';
 }
 
-// Roda a função principal assim que a página carrega
+// Associa logout a todos os links com onclick="logout()"
+logoutLinks.forEach(link => link.addEventListener('click', logout));
+
+// Funções para editar e excluir instâncias
+function editInstance(id) {
+    alert(`Função de editar instância ID: ${id} ainda não implementada.`);
+    // Aqui você pode abrir modal de edição
+}
+
+function deleteInstance(id) {
+    if (!confirm('Deseja realmente excluir esta instância?')) return;
+    alert(`Função de deletar instância ID: ${id} ainda não implementada.`);
+    // Aqui você pode chamar o backend DELETE /api/instances/:id
+}
+
+// Executa proteção e carregamento ao abrir a página
+protectPage();
 loadInstancesPage();
