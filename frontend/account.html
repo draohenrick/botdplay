@@ -1,63 +1,156 @@
 <!DOCTYPE html>
 <html lang="pt-BR" data-bs-theme="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Minha Conta - Dplay Bot</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link href="css/style.css" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Minha Conta - Dplay Bot</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="css/style.css" rel="stylesheet">
 </head>
 <body>
-    <div class="container-fluid">
-      <div class="row">
-        <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse">
-            <div class="position-sticky sidebar-sticky">
-                <div class="text-center my-4">
-                    <h6 class="sidebar-heading px-3 text-dark"><span>Dplay Bot</span></h6>
-                </div>
-                <ul class="nav flex-column">
-                    <li class="nav-item"><a class="nav-link" href="index.html">Dashboard</a></li>
-                    <li class="nav-item"><a class="nav-link" href="instances.html">Conexões</a></li>
-                    <li class="nav-item"><a class="nav-link" href="conversations.html">Conversas</a></li>
-                    <li class="nav-item"><a class="nav-link" href="leads.html">Leads</a></li>
-                    <li class="nav-item"><a class="nav-link" href="services.html">Configurar Bot</a></li>
-                    <li class="nav-item"><a class="nav-link" href="usuarios.html">Usuários</a></li>
-                    <li class="nav-item mt-auto"><a class="nav-link active" href="account.html">Minha Conta</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#" onclick="logout()">Logout</a></li>
-                </ul>
-            </div>
-        </nav>
-    
-        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-            <div class="page-header d-flex justify-content-between align-items-center my-3">
-                <h1>Minha Conta</h1>
-            </div>
-            
-            <p>Gerencie suas informações de perfil e senha.</p>
-            <div class="card">
-                <div class="card-body">
-                    <form id="account-form">
-                        <div class="mb-3">
-                            <label for="account-name" class="form-label">Nome</label>
-                            <input type="text" id="account-name" class="form-control">
-                        </div>
-                        <div class="mb-3">
-                            <label for="account-email" class="form-label">Email</label>
-                            <input type="email" id="account-email" class="form-control" disabled>
-                        </div>
-                        <button type="submit" class="btn btn-primary">Salvar Alterações</button>
-                    </form>
-                </div>
-            </div>
-        </main>
-      </div>
+  <div class="container-fluid">
+    <div class="row">
+      <!-- Sidebar -->
+      <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+        <div class="position-sticky sidebar-sticky">
+          <div class="text-center my-4">
+            <h6 class="sidebar-heading px-3 text-dark"><span>Dplay Bot</span></h6>
+          </div>
+          <ul class="nav flex-column">
+            <li class="nav-item"><a class="nav-link" href="index.html">Dashboard</a></li>
+            <li class="nav-item"><a class="nav-link" href="instances.html">Conexões</a></li>
+            <li class="nav-item"><a class="nav-link" href="conversations.html">Conversas</a></li>
+            <li class="nav-item"><a class="nav-link" href="leads.html">Leads</a></li>
+            <li class="nav-item"><a class="nav-link" href="services.html">Configurar Bot</a></li>
+            <li class="nav-item"><a class="nav-link" href="usuarios.html">Usuários</a></li>
+            <li class="nav-item mt-auto"><a class="nav-link active" href="account.html">Minha Conta</a></li>
+            <li class="nav-item"><a class="nav-link" href="#" onclick="logout()">Logout</a></li>
+          </ul>
+        </div>
+      </nav>
+
+      <!-- Main -->
+      <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+        <div class="page-header d-flex justify-content-between align-items-center my-3">
+          <h1>Minha Conta</h1>
+          <button class="btn btn-outline-light" onclick="refreshAccount()">⟳ Atualizar</button>
+        </div>
+
+        <p>Gerencie suas informações pessoais, senha e preferências.</p>
+
+        <!-- Perfil -->
+        <div class="card mb-4">
+          <div class="card-header border-secondary">
+            <h5 class="mb-0">Informações do Perfil</h5>
+          </div>
+          <div class="card-body">
+            <form id="account-form">
+              <div class="mb-3">
+                <label for="account-name" class="form-label">Nome</label>
+                <input type="text" id="account-name" class="form-control" placeholder="Seu nome completo">
+              </div>
+              <div class="mb-3">
+                <label for="account-email" class="form-label">Email</label>
+                <input type="email" id="account-email" class="form-control" disabled>
+                <small class="text-muted">O email não pode ser alterado.</small>
+              </div>
+              <div class="d-flex justify-content-end">
+                <button type="submit" class="btn btn-success">💾 Salvar Alterações</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Alterar Senha -->
+        <div class="card mb-4">
+          <div class="card-header border-secondary">
+            <h5 class="mb-0">Alterar Senha</h5>
+          </div>
+          <div class="card-body">
+            <form id="password-form">
+              <div class="mb-3">
+                <label for="current-password" class="form-label">Senha Atual</label>
+                <input type="password" id="current-password" class="form-control" required>
+              </div>
+              <div class="mb-3">
+                <label for="new-password" class="form-label">Nova Senha</label>
+                <input type="password" id="new-password" class="form-control" required>
+              </div>
+              <div class="mb-3">
+                <label for="confirm-password" class="form-label">Confirmar Nova Senha</label>
+                <input type="password" id="confirm-password" class="form-control" required>
+              </div>
+              <div class="d-flex justify-content-end">
+                <button type="button" class="btn btn-warning" onclick="changePassword()">🔑 Atualizar Senha</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Preferências -->
+        <div class="card mb-5">
+          <div class="card-header border-secondary">
+            <h5 class="mb-0">Preferências</h5>
+          </div>
+          <div class="card-body">
+            <form id="preferences-form">
+              <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" id="darkModeSwitch" checked>
+                <label class="form-check-label" for="darkModeSwitch">Modo Escuro Ativado</label>
+              </div>
+              <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" id="notificationsSwitch" checked>
+                <label class="form-check-label" for="notificationsSwitch">Receber notificações de novas conversas</label>
+              </div>
+              <div class="d-flex justify-content-end">
+                <button type="button" class="btn btn-primary" onclick="savePreferences()">💾 Salvar Preferências</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </main>
     </div>
-    
-    <script src="js/auth.js"></script>
-    <script src="js/account.js"></script>
-    <script>
-        protectPage();
-    </script>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/account.js"></script>
+  <script>
+    protectPage();
+
+    // Mock para simular carregamento de dados
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('account-name').value = "Usuário Dplay";
+      document.getElementById('account-email').value = "usuario@dplay.com";
+    });
+
+    function refreshAccount() {
+      alert("Informações atualizadas com sucesso!");
+    }
+
+    function changePassword() {
+      const current = document.getElementById('current-password').value;
+      const newPass = document.getElementById('new-password').value;
+      const confirm = document.getElementById('confirm-password').value;
+      if (!current || !newPass || !confirm) {
+        alert("Preencha todos os campos de senha!");
+        return;
+      }
+      if (newPass !== confirm) {
+        alert("As senhas não coincidem!");
+        return;
+      }
+      alert("Senha atualizada com sucesso!");
+      document.getElementById('password-form').reset();
+    }
+
+    function savePreferences() {
+      const darkMode = document.getElementById('darkModeSwitch').checked;
+      const notifications = document.getElementById('notificationsSwitch').checked;
+      alert(`Preferências salvas:\nModo escuro: ${darkMode ? "Ativado" : "Desativado"}\nNotificações: ${notifications ? "Ativadas" : "Desativadas"}`);
+    }
+  </script>
 </body>
 </html>
