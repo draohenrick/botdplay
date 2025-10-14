@@ -1,17 +1,23 @@
 const BACKEND_URL = 'https://botdplay.onrender.com';
 
-const logoutButton = document.getElementById('logout-button');
+const conversationsContainer = document.getElementById('conversations-container');
+const logoutLinks = document.querySelectorAll('[onclick="logout()"]');
 
-async function loadConversationsPage() {
+// Função para proteger página
+function protectPage() {
     const token = localStorage.getItem('authToken');
     if (!token) {
-        alert('Acesso negado. Por favor, faça login para continuar.');
+        alert('Acesso negado. Faça login para continuar.');
         window.location.href = '/login.html';
-        return;
     }
+}
+
+// Função para carregar as conversas
+async function loadConversationsPage() {
+    const token = localStorage.getItem('authToken');
+    if (!token) return;
 
     try {
-        // ROTA ESPECÍFICA DESTA PÁGINA
         const response = await fetch(`${BACKEND_URL}/api/conversations`, {
             method: 'GET',
             headers: {
@@ -22,30 +28,69 @@ async function loadConversationsPage() {
 
         if (response.status === 401 || response.status === 403) {
             localStorage.removeItem('authToken');
-            alert('Sua sessão expirou. Por favor, faça login novamente.');
+            alert('Sua sessão expirou. Faça login novamente.');
             window.location.href = '/login.html';
             return;
         }
 
-        const data = await response.json();
+        const conversations = await response.json();
 
-        // FAÇA ALGO COM OS DADOS
-        // Exemplo: exiba as conversas em uma lista ou tabela
-        console.log('Conversas recebidas:', data);
-        const dataContainer = document.getElementById('conversations-container'); // Crie um elemento com este ID
-        if(dataContainer) dataContainer.textContent = JSON.stringify(data, null, 2);
+        if (conversationsContainer) {
+            if (conversations.length === 0) {
+                conversationsContainer.textContent = 'Nenhuma conversa encontrada.';
+                return;
+            }
+
+            // Cria tabela de conversas
+            const table = document.createElement('table');
+            table.className = 'table table-striped';
+            table.innerHTML = `
+                <thead>
+                    <tr>
+                        <th>Usuário</th>
+                        <th>Mensagem</th>
+                        <th>Data/Hora</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${conversations.map(conv => `
+                        <tr>
+                            <td>${conv.user}</td>
+                            <td>${conv.message}</td>
+                            <td>${new Date(conv.timestamp).toLocaleString()}</td>
+                            <td>
+                                <button class="btn btn-sm btn-primary" onclick="viewConversation('${conv.id}')">Visualizar</button>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            `;
+            conversationsContainer.innerHTML = '';
+            conversationsContainer.appendChild(table);
+        }
 
     } catch (error) {
-        console.error('Erro ao carregar os dados da página de conversas:', error);
+        console.error('Erro ao carregar conversas:', error);
+        if (conversationsContainer) conversationsContainer.textContent = 'Erro ao carregar conversas.';
     }
 }
 
-if (logoutButton) {
-    logoutButton.addEventListener('click', () => {
-        localStorage.removeItem('authToken');
-        alert('Você saiu com sucesso.');
-        window.location.href = '/login.html';
-    });
+// Função de logout
+function logout() {
+    localStorage.removeItem('authToken');
+    alert('Você saiu com sucesso.');
+    window.location.href = '/login.html';
 }
 
+// Associa logout a todos os links
+logoutLinks.forEach(link => link.addEventListener('click', logout));
+
+// Placeholder para visualizar conversa
+function viewConversation(id) {
+    alert(`Visualizar conversa ID: ${id} (função ainda não implementada)`);
+}
+
+// Executa proteção e carregamento ao abrir a página
+protectPage();
 loadConversationsPage();
