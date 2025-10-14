@@ -13,10 +13,14 @@
 <body>
   <div class="container-fluid">
     <div class="row">
+
+      <!-- Sidebar -->
       <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse">
         <div class="position-sticky sidebar-sticky">
           <div class="text-center my-4">
-            <h6 class="sidebar-heading px-3 text-dark"><span>Dplay Bot</span></h6>
+            <!-- Logo dinâmica do cliente -->
+            <img id="clientLogo" src="img/dplay-logo.png" alt="Logo do Cliente" style="cursor:pointer; max-width: 150px;">
+            <input type="file" id="logoUpload" style="display:none" accept="image/*">
           </div>
           <ul class="nav flex-column">
             <li class="nav-item"><a class="nav-link active" href="index.html">Dashboard</a></li>
@@ -31,7 +35,22 @@
         </div>
       </nav>
 
+      <!-- Conteúdo principal -->
       <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+
+        <!-- Topo com informações do usuário -->
+        <div class="d-flex justify-content-between align-items-center py-3 border-bottom border-secondary">
+          <div>
+            <h5 id="userName">Drão Henrick</h5>
+            <small id="userCode">Código: ADM-0001</small><br>
+            <small id="userLevel">Nível: Admin</small>
+          </div>
+          <div>
+            <small id="userWhatsapp">WhatsApp: +55 11 99999-9999</small>
+          </div>
+        </div>
+
+        <!-- Cabeçalho da página -->
         <div class="page-header d-flex justify-content-between align-items-center my-3">
           <h1>Dashboard</h1>
         </div>
@@ -98,15 +117,40 @@
     </div>
   </div>
 
+  <!-- Scripts -->
   <script src="js/auth.js"></script>
   <script src="js/index.js"></script>
 
   <script>
     protectPage(); // protege a página
 
+    // Logo upload
+    const clientLogo = document.getElementById('clientLogo');
+    const logoUpload = document.getElementById('logoUpload');
+
+    clientLogo.addEventListener('click', () => logoUpload.click());
+
+    logoUpload.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          clientLogo.src = reader.result;
+          // TODO: enviar para backend
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    // Simulação de dados do dashboard
     document.addEventListener('DOMContentLoaded', () => {
-      // Simulação de dados — substitua futuramente por chamadas API
       const dashboardData = {
+        user: {
+          nome: 'Drão Henrick',
+          codigo: 'ADM-0001',
+          nivel: 'Admin',
+          whatsapp: '+55 11 99999-9999'
+        },
         leads: 124,
         conversations: 18,
         connections: 5,
@@ -120,13 +164,20 @@
         ]
       };
 
+      // Atualiza infos do usuário
+      document.getElementById('userName').textContent = dashboardData.user.nome;
+      document.getElementById('userCode').textContent = `Código: ${dashboardData.user.codigo}`;
+      document.getElementById('userLevel').textContent = `Nível: ${dashboardData.user.nivel}`;
+      document.getElementById('userWhatsapp').textContent = `WhatsApp: ${dashboardData.user.whatsapp}`;
+
       // Atualiza métricas
       document.getElementById('leadCount').textContent = dashboardData.leads;
       document.getElementById('conversationCount').textContent = dashboardData.conversations;
       document.getElementById('connectionCount').textContent = dashboardData.connections;
-      document.getElementById('botStatus').textContent = dashboardData.botOnline ? 'Online' : 'Offline';
-      document.getElementById('botStatus').classList.toggle('text-success', dashboardData.botOnline);
-      document.getElementById('botStatus').classList.toggle('text-danger', !dashboardData.botOnline);
+      const botStatus = document.getElementById('botStatus');
+      botStatus.textContent = dashboardData.botOnline ? 'Online' : 'Offline';
+      botStatus.classList.toggle('text-success', dashboardData.botOnline);
+      botStatus.classList.toggle('text-danger', !dashboardData.botOnline);
 
       // Preenche logs
       const logList = document.getElementById('logList');
