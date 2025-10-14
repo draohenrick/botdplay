@@ -1,150 +1,170 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-bs-theme="dark">
 <head>
   <meta charset="UTF-8">
-  <title>Dashboard - Dplay Bot</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dashboard - Dplay Bot</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
-  <script>const BACKEND_URL='https://botdplay.onrender.com';</script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="css/style.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
+
 <body>
-<div class="container-fluid">
-  <div class="row">
-    <!-- Sidebar -->
-    <nav class="col-md-2 bg-dark sidebar p-0">
-      <div class="list-group list-group-flush">
-        <a href="index.html" class="list-group-item list-group-item-action bg-dark text-white active">Dashboard</a>
-        <a href="connections.html" class="list-group-item list-group-item-action bg-dark text-white">Conexões</a>
-        <a href="conversations.html" class="list-group-item list-group-item-action bg-dark text-white">Conversas</a>
-        <a href="leads.html" class="list-group-item list-group-item-action bg-dark text-white">Leads</a>
-        <a href="bot-config.html" class="list-group-item list-group-item-action bg-dark text-white">Configurar Bot</a>
-        <a href="account.html" class="list-group-item list-group-item-action bg-dark text-white">Minha Conta</a>
-        <a href="#" id="logoutBtn" class="list-group-item list-group-item-action bg-dark text-white">Sair</a>
-      </div>
-    </nav>
+  <div class="container-fluid">
+    <div class="row">
+      <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+        <div class="position-sticky sidebar-sticky">
+          <div class="text-center my-4">
+            <h6 class="sidebar-heading px-3 text-dark"><span>Dplay Bot</span></h6>
+          </div>
+          <ul class="nav flex-column">
+            <li class="nav-item"><a class="nav-link active" href="index.html">Dashboard</a></li>
+            <li class="nav-item"><a class="nav-link" href="instances.html">Conexões</a></li>
+            <li class="nav-item"><a class="nav-link" href="conversations.html">Conversas</a></li>
+            <li class="nav-item"><a class="nav-link" href="leads.html">Leads</a></li>
+            <li class="nav-item"><a class="nav-link" href="services.html">Configurar Bot</a></li>
+            <li class="nav-item"><a class="nav-link" href="usuarios.html">Usuários</a></li>
+            <li class="nav-item mt-auto"><a class="nav-link" href="account.html">Minha Conta</a></li>
+            <li class="nav-item"><a class="nav-link" href="#" onclick="logout()">Logout</a></li>
+          </ul>
+        </div>
+      </nav>
 
-    <!-- Main -->
-    <main class="col-md-10 ms-sm-auto px-4 py-4">
-      <h1>Dashboard</h1>
-      <div class="row mt-4" id="kpiCards">
-        <!-- Cards de KPIs -->
-      </div>
-      <div class="row mt-4">
-        <div class="col-md-6">
-          <canvas id="chartConversations"></canvas>
+      <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+        <div class="page-header d-flex justify-content-between align-items-center my-3">
+          <h1>Dashboard</h1>
         </div>
-        <div class="col-md-6">
-          <canvas id="chartLeads"></canvas>
+
+        <!-- Cards principais -->
+        <div class="row g-3 mb-4">
+          <div class="col-md-3">
+            <div class="card text-bg-dark shadow-sm">
+              <div class="card-body">
+                <h5 class="card-title">Leads</h5>
+                <h2 id="leadCount">0</h2>
+                <p class="card-text"><small>Novos neste mês</small></p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card text-bg-dark shadow-sm">
+              <div class="card-body">
+                <h5 class="card-title">Conversas Ativas</h5>
+                <h2 id="conversationCount">0</h2>
+                <p class="card-text"><small>Usuários em contato</small></p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card text-bg-dark shadow-sm">
+              <div class="card-body">
+                <h5 class="card-title">Conexões</h5>
+                <h2 id="connectionCount">0</h2>
+                <p class="card-text"><small>Ativas no momento</small></p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card text-bg-dark shadow-sm">
+              <div class="card-body">
+                <h5 class="card-title">Status do Bot</h5>
+                <h2 id="botStatus" class="text-success">Online</h2>
+                <p class="card-text"><small>Monitoramento em tempo real</small></p>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-      <div class="row mt-4" id="quickActions">
-        <!-- Botões rápidos -->
-      </div>
-    </main>
+
+        <!-- Gráfico -->
+        <div class="card text-bg-dark shadow-sm mb-4">
+          <div class="card-body">
+            <h5 class="card-title">Atividade Semanal</h5>
+            <canvas id="activityChart" height="100"></canvas>
+          </div>
+        </div>
+
+        <!-- Logs recentes -->
+        <div class="card text-bg-dark shadow-sm mb-4">
+          <div class="card-body">
+            <h5 class="card-title">Atividades Recentes</h5>
+            <ul id="logList" class="list-group list-group-flush bg-transparent">
+              <li class="list-group-item bg-transparent text-light border-secondary">Carregando logs...</li>
+            </ul>
+          </div>
+        </div>
+
+      </main>
+    </div>
   </div>
-</div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-async function loadDashboard() {
-  const token = localStorage.getItem('token');
-  if(!token) return window.location.href='index.html';
+  <script src="js/auth.js"></script>
+  <script src="js/index.js"></script>
 
-  try {
-    const res = await fetch(`${BACKEND_URL}/api/dashboard`,{
-      headers:{'Authorization':`Bearer ${token}`}
+  <script>
+    protectPage(); // protege a página
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // Simulação de dados — substitua futuramente por chamadas API
+      const dashboardData = {
+        leads: 124,
+        conversations: 18,
+        connections: 5,
+        botOnline: true,
+        logs: [
+          "Nova conexão WhatsApp criada",
+          "Bot respondeu a um usuário",
+          "Novo lead adicionado",
+          "Conversa encerrada com sucesso",
+          "Atualização de configuração do bot"
+        ]
+      };
+
+      // Atualiza métricas
+      document.getElementById('leadCount').textContent = dashboardData.leads;
+      document.getElementById('conversationCount').textContent = dashboardData.conversations;
+      document.getElementById('connectionCount').textContent = dashboardData.connections;
+      document.getElementById('botStatus').textContent = dashboardData.botOnline ? 'Online' : 'Offline';
+      document.getElementById('botStatus').classList.toggle('text-success', dashboardData.botOnline);
+      document.getElementById('botStatus').classList.toggle('text-danger', !dashboardData.botOnline);
+
+      // Preenche logs
+      const logList = document.getElementById('logList');
+      logList.innerHTML = '';
+      dashboardData.logs.forEach(log => {
+        const li = document.createElement('li');
+        li.className = 'list-group-item bg-transparent text-light border-secondary';
+        li.textContent = log;
+        logList.appendChild(li);
+      });
+
+      // Gráfico
+      const ctx = document.getElementById('activityChart');
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
+          datasets: [{
+            label: 'Mensagens Processadas',
+            data: [45, 60, 52, 80, 70, 110, 90],
+            borderColor: 'rgba(75, 192, 192, 1)',
+            tension: 0.3,
+            fill: false,
+            pointRadius: 4,
+            borderWidth: 2
+          }]
+        },
+        options: {
+          scales: {
+            x: { grid: { color: 'rgba(255,255,255,0.1)' } },
+            y: { grid: { color: 'rgba(255,255,255,0.1)' }, beginAtZero: true }
+          },
+          plugins: {
+            legend: { labels: { color: 'white' } }
+          }
+        }
+      });
     });
-    const data = await res.json();
-    if(!data.success) return window.location.href='index.html';
-
-    // Preencher KPIs
-    const kpiCards = document.getElementById('kpiCards');
-    kpiCards.innerHTML = `
-      <div class="col-md-3 mb-3">
-        <div class="card text-white bg-primary">
-          <div class="card-body">
-            <h5 class="card-title">Conversas Ativas</h5>
-            <p class="card-text">${data.kpis.activeConversations}</p>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-3 mb-3">
-        <div class="card text-white bg-success">
-          <div class="card-body">
-            <h5 class="card-title">Leads Gerados</h5>
-            <p class="card-text">${data.kpis.newLeads}</p>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-3 mb-3">
-        <div class="card text-white bg-warning">
-          <div class="card-body">
-            <h5 class="card-title">Conexões Ativas</h5>
-            <p class="card-text">${data.kpis.activeConnections}</p>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-3 mb-3">
-        <div class="card text-white bg-danger">
-          <div class="card-body">
-            <h5 class="card-title">Bot Online</h5>
-            <p class="card-text">${data.kpis.botStatus ? 'Sim' : 'Não'}</p>
-          </div>
-        </div>
-      </div>
-    `;
-
-    // Quick actions
-    const quickActions = document.getElementById('quickActions');
-    quickActions.innerHTML = `
-      <button class="btn btn-primary me-2" onclick="window.location.href='conversations.html'">Nova Conversa</button>
-      <button class="btn btn-warning" onclick="window.location.href='connections.html'">Adicionar Conexão</button>
-    `;
-
-    // Charts
-    const ctxConversations = document.getElementById('chartConversations').getContext('2d');
-    new Chart(ctxConversations,{
-      type:'line',
-      data:{
-        labels:data.charts.conversations.labels,
-        datasets:[{
-          label:'Conversas',
-          data:data.charts.conversations.values,
-          backgroundColor:'rgba(255,102,0,0.2)',
-          borderColor:'rgba(255,102,0,1)',
-          borderWidth:2
-        }]
-      }
-    });
-
-    const ctxLeads = document.getElementById('chartLeads').getContext('2d');
-    new Chart(ctxLeads,{
-      type:'line',
-      data:{
-        labels:data.charts.leads.labels,
-        datasets:[{
-          label:'Leads',
-          data:data.charts.leads.values,
-          backgroundColor:'rgba(0,123,255,0.2)',
-          borderColor:'rgba(0,123,255,1)',
-          borderWidth:2
-        }]
-      }
-    });
-
-  } catch(e){
-    console.error(e);
-    alert('Erro ao carregar dashboard');
-  }
-}
-
-document.getElementById('logoutBtn').addEventListener('click',()=>{
-  localStorage.removeItem('token');
-  window.location.href='index.html';
-});
-
-loadDashboard();
-</script>
+  </script>
 </body>
 </html>
