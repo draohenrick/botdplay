@@ -1,21 +1,19 @@
 // =======================================
-// LOGIN.JS - Dplay Bot SaaS
+// LOGIN.JS - Dplay Bot SaaS (Corrigido)
 // =======================================
 
-// URL do backend hospedado no Render
 const BACKEND_URL = 'https://botdplay.onrender.com';
 
-// Seleciona elementos do DOM
+// Seleciona elementos do DOM corretamente
 const loginForm = document.getElementById('login-form');
-const emailInput = document.getElementById('email');
-const passwordInput = document.getElementById('password');
+const emailInput = document.getElementById('email-input');
+const passwordInput = document.getElementById('password-input');
 const errorMessage = document.getElementById('error-message');
 
 // Função principal de login
 async function handleLogin(event) {
   event.preventDefault();
 
-  // Coleta dados do formulário
   const email = emailInput.value.trim();
   const senha = passwordInput.value.trim();
 
@@ -28,10 +26,9 @@ async function handleLogin(event) {
     const response = await fetch(`${BACKEND_URL}/api/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, senha })
+      body: JSON.stringify({ email, senha }),
     });
 
-    // Se o backend retornar erro 404/401/etc
     if (!response.ok) {
       const text = await response.text();
       try {
@@ -46,11 +43,9 @@ async function handleLogin(event) {
     const data = await response.json();
 
     if (data.token) {
-      // Armazena token no localStorage
       localStorage.setItem('authToken', data.token);
       localStorage.setItem('userEmail', email);
 
-      // Redireciona conforme o tipo de usuário
       if (data.role && data.role === 'admin') {
         window.location.href = '/admin-dashboard.html';
       } else {
@@ -65,7 +60,7 @@ async function handleLogin(event) {
   }
 }
 
-// Exibe mensagem de erro na tela
+// Exibe mensagem de erro
 function showError(msg) {
   if (errorMessage) {
     errorMessage.textContent = msg;
@@ -83,10 +78,10 @@ function checkExistingSession() {
   }
 }
 
-// Adiciona listener no formulário
+// Adiciona listener
 if (loginForm) {
   loginForm.addEventListener('submit', handleLogin);
 }
 
-// Executa ao carregar a página
+// Executa ao carregar
 checkExistingSession();
