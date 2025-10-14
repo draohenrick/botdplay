@@ -1,99 +1,140 @@
-// URL do backend
-const BACKEND_URL = 'https://botdplay.onrender.com';
+const token = localStorage.getItem('authToken');
+const createInstanceForm = document.getElementById('create-instance-form');
+const instanceNameInput = document.getElementById('instance-name-input');
+const instancesList = document.getElementById('instances-list');
+const qrCodeModal = new bootstrap.Modal(document.getElementById('qrCodeModal'));
+const qrCodeImage = document.getElementById('qr-code-image');
+const qrSpinner = document.getElementById('qr-spinner');
 
-// Elementos da página
-const instancesContainer = document.getElementById('instances-container');
-const logoutLinks = document.querySelectorAll('[onclick="logout()"]'); // Todos links de logout
+// --- CONEXÃO SOCKET.IO PARA TEMPO REAL ---
+// Conecta ao servidor de socket, enviando o token para autenticação
+const socket = io(BASE_URL, {
+    auth: { token }
+});
 
-// Função para proteger página
-function protectPage() {
-    const token = localStorage.getItem('authToken');
-    if (!token) {
-        alert('Acesso negado. Faça login para continuar.');
-        window.location.href = '/login.html';
+socket.on('connect', () => {
+    console.log('Conectado ao servidor de socket!', socket.id);
+});
+
+// Ouve o evento 'qr_code' enviado pelo backend
+socket.on('qr_code', (data) => {
+    console.log('QR Code recebido!');
+    qrSpinner.style.display = 'none';
+    qrCodeImage.src = data.qr;
+    qrCodeImage.style.display = 'block';
+});
+
+// Ouve o evento 'status_change' enviado pelo backend
+socket.on('status_change', (data) => {
+    console.log('Status da instância mudou:', data.status);
+    if (data.status === 'online') {
+        qrCodeModal.hide();
+        alert(`Instância "${data.instanceName}" conectada com sucesso!`);
     }
-}
+    // Recarrega a lista de instâncias para mostrar o novo status
+    loadInstances(); 
+});
 
-// Função para carregar as instâncias
-async function loadInstancesPage() {
-    const token = localStorage.getItem('authToken');
-    if (!token) return;
 
+// --- LÓGICA DA PÁGINA ---
+
+// Função para carregar e exibir as instâncias do usuário
+async function loadInstances() {
     try {
-        const response = await fetch(`${BACKEND_URL}/api/instances`, {
+        const response = await fetch(`${BASE_URL}/api/instances`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             }
         });
-
-        if (response.status === 401 || response.status === 403) {
-            localStorage.removeItem('authToken');
-            alert('Sua sessão expirou. Faça login novamente.');
-            window.location.href = '/login.html';
+        const instances = await response.json();
+        
+        instancesList.innerHTML = ''; // Limpa a lista
+        if (instances.length === 0) {
+            instancesList.innerHTML = '<p class="text-muted">Nenhuma conexão encontrada. Crie uma acima!</p>';
             return;
         }
 
-        const instances = await response.json();
-
-        if (instancesContainer) {
-            if (instances.length === 0) {
-                instancesContainer.textContent = 'Nenhuma conexão encontrada.';
-                return;
-            }
-
-            // Limpa container
-            instancesContainer.innerHTML = '';
-
-            // Cria cards ou listas para cada instância
-            instances.forEach(inst => {
-                const card = document.createElement('div');
-                card.className = 'card mb-2';
-                card.innerHTML = `
-                    <div class="card-body d-flex justify-content-between align-items-center">
-                        <div>
-                            <strong>${inst.name}</strong><br>
-                            Status: ${inst.status}
-                        </div>
-                        <div>
-                            <button class="btn btn-sm btn-primary me-2" onclick="editInstance('${inst.id}')">Editar</button>
-                            <button class="btn btn-sm btn-danger" onclick="deleteInstance('${inst.id}')">Excluir</button>
+        instances.forEach(instance => {
+            const statusClass = instance.status === 'online' ? 'text-success' : 'text-danger';
+            const statusText = instance.status === 'online' ? 'Online' : 'Offline';
+            
+            const card = `
+                <div class="col-md-4 mb-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">${instance.name}</h5>
+                            <p class="card-text">Status: <strong class="${statusClass}">${statusText}</strong></p>
+                            <button class="btn btn-danger btn-sm" onclick="disconnectInstance('${instance._id}')">Desconectar</button>
                         </div>
                     </div>
-                `;
-                instancesContainer.appendChild(card);
-            });
-        }
+                </div>
+            `;
+            instancesList.innerHTML += card;
+        });
 
     } catch (error) {
-        if (instancesContainer) instancesContainer.textContent = 'Erro ao carregar as conexões.';
-        console.error('Erro ao carregar as instâncias:', error);
+        console.error('Erro ao carregar instâncias:', error);
+        instancesList.innerHTML = '<p class="text-danger">Não foi possível carregar as conexões.</p>';
     }
 }
 
-// Função de logout
-function logout() {
-    localStorage.removeItem('authToken');
-    alert('Você saiu com sucesso.');
-    window.location.href = '/login.html';
+// Evento de submit do formulário para criar uma nova instância
+createInstanceForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const instanceName = instanceNameInput.value;
+
+    // Mostra o modal do QR Code em estado de carregamento
+    qrCodeImage.style.display = 'none';
+    qrSpinner.style.display = 'block';
+    qrCodeModal.show();
+
+    try {
+        const response = await fetch(`${BASE_URL}/api/instances/connect`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ instanceName })
+        });
+
+        if (!response.ok) {
+            qrCodeModal.hide();
+            const err = await response.json();
+            alert(`Erro: ${err.error}`);
+        }
+        // Se a resposta for OK, apenas aguardamos o evento 'qr_code' do socket
+    } catch (error) {
+        console.error('Erro ao criar instância:', error);
+        qrCodeModal.hide();
+        alert('Erro de comunicação ao criar instância.');
+    }
+});
+
+// Função para desconectar uma instância
+async function disconnectInstance(instanceId) {
+    if (!confirm('Tem certeza que deseja desconectar esta instância?')) return;
+    
+    try {
+        const response = await fetch(`${BASE_URL}/api/instances/${instanceId}/disconnect`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) throw new Error('Falha ao desconectar.');
+        
+        alert('Instância desconectada com sucesso.');
+        loadInstances(); // Recarrega a lista
+    } catch (error) {
+        console.error('Erro ao desconectar:', error);
+        alert('Não foi possível desconectar a instância.');
+    }
 }
 
-// Associa logout a todos os links com onclick="logout()"
-logoutLinks.forEach(link => link.addEventListener('click', logout));
 
-// Funções para editar e excluir instâncias
-function editInstance(id) {
-    alert(`Função de editar instância ID: ${id} ainda não implementada.`);
-    // Aqui você pode abrir modal de edição
-}
-
-function deleteInstance(id) {
-    if (!confirm('Deseja realmente excluir esta instância?')) return;
-    alert(`Função de deletar instância ID: ${id} ainda não implementada.`);
-    // Aqui você pode chamar o backend DELETE /api/instances/:id
-}
-
-// Executa proteção e carregamento ao abrir a página
-protectPage();
-loadInstancesPage();
+// Carrega as instâncias quando a página é aberta
+loadInstances();
