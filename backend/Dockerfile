@@ -1,22 +1,18 @@
-# Dockerfile
-
-# 1. Imagem base oficial do Node.js
+# Usar Node 18
 FROM node:18-alpine
 
-# 2. Diretório de trabalho dentro do container
+# Definir diretório da aplicação
 WORKDIR /usr/src/app
 
-# 3. Copia os arquivos de dependências
+# Copiar package.json e instalar dependências
 COPY package*.json ./
+RUN npm install --production
 
-# 4. Instala dependências
-RUN npm install
-
-# 5. Copia todo o restante do projeto para dentro do container
+# Copiar todo o código
 COPY . .
 
-# 6. Expõe a porta que a aplicação irá rodar
+# Expor porta padrão
 EXPOSE 3000
 
-# 7. Comando para iniciar o servidor
+# Comando para iniciar o backend
 CMD ["node", "server.js"]
