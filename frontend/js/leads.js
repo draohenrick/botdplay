@@ -1,17 +1,23 @@
 const BACKEND_URL = 'https://botdplay.onrender.com';
 
-const logoutButton = document.getElementById('logout-button');
+const leadsContainer = document.getElementById('leads-container');
+const logoutLinks = document.querySelectorAll('[onclick="logout()"]');
 
-async function loadLeadsPage() {
+// Função para proteger página
+function protectPage() {
     const token = localStorage.getItem('authToken');
     if (!token) {
-        alert('Acesso negado. Por favor, faça login para continuar.');
+        alert('Acesso negado. Faça login para continuar.');
         window.location.href = '/login.html';
-        return;
     }
+}
+
+// Função para carregar leads
+async function loadLeadsPage() {
+    const token = localStorage.getItem('authToken');
+    if (!token) return;
 
     try {
-        // ROTA ESPECÍFICA DESTA PÁGINA
         const response = await fetch(`${BACKEND_URL}/api/leads`, {
             method: 'GET',
             headers: {
@@ -22,29 +28,71 @@ async function loadLeadsPage() {
 
         if (response.status === 401 || response.status === 403) {
             localStorage.removeItem('authToken');
-            alert('Sua sessão expirou. Por favor, faça login novamente.');
+            alert('Sua sessão expirou. Faça login novamente.');
             window.location.href = '/login.html';
             return;
         }
 
-        const data = await response.json();
+        const leads = await response.json();
 
-        // FAÇA ALGO COM OS DADOS
-        console.log('Leads recebidos:', data);
-        const dataContainer = document.getElementById('leads-container'); // Crie um elemento com este ID no seu HTML
-        if(dataContainer) dataContainer.textContent = JSON.stringify(data, null, 2);
+        if (leadsContainer) {
+            if (leads.length === 0) {
+                leadsContainer.textContent = 'Nenhum lead encontrado.';
+                return;
+            }
+
+            // Cria tabela de leads
+            const table = document.createElement('table');
+            table.className = 'table table-striped';
+            table.innerHTML = `
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Email</th>
+                        <th>Telefone</th>
+                        <th>Data/Hora</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${leads.map(lead => `
+                        <tr>
+                            <td>${lead.nome}</td>
+                            <td>${lead.email}</td>
+                            <td>${lead.telefone || '-'}</td>
+                            <td>${new Date(lead.createdAt).toLocaleString()}</td>
+                            <td>
+                                <button class="btn btn-sm btn-primary" onclick="viewLead('${lead.id}')">Visualizar</button>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            `;
+            leadsContainer.innerHTML = '';
+            leadsContainer.appendChild(table);
+        }
 
     } catch (error) {
-        console.error('Erro ao carregar os dados da página de leads:', error);
+        console.error('Erro ao carregar leads:', error);
+        if (leadsContainer) leadsContainer.textContent = 'Erro ao carregar leads.';
     }
 }
 
-if (logoutButton) {
-    logoutButton.addEventListener('click', () => {
-        localStorage.removeItem('authToken');
-        alert('Você saiu com sucesso.');
-        window.location.href = '/login.html';
-    });
+// Função de logout
+function logout() {
+    localStorage.removeItem('authToken');
+    alert('Você saiu com sucesso.');
+    window.location.href = '/login.html';
 }
 
+// Associa logout a todos os links
+logoutLinks.forEach(link => link.addEventListener('click', logout));
+
+// Placeholder para visualizar lead
+function viewLead(id) {
+    alert(`Visualizar lead ID: ${id} (função ainda não implementada)`);
+}
+
+// Executa proteção e carregamento ao abrir a página
+protectPage();
 loadLeadsPage();
