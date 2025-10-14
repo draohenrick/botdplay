@@ -1,75 +1,83 @@
 <!DOCTYPE html>
-<html lang="pt-BR" data-bs-theme="dark">
+<html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Dashboard - Dplay Bot</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link href="css/style.css" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dplay Bot - Login</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <style>
+    body {
+      background-color: #f8f9fa;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .login-card {
+      max-width: 400px;
+      width: 100%;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      padding: 30px;
+    }
+    .brand {
+      text-align: center;
+      font-weight: 700;
+      font-size: 1.5rem;
+      margin-bottom: 20px;
+    }
+  </style>
 </head>
 <body>
-  <div class="container-fluid">
-    <div class="row">
-      <!-- Sidebar -->
-      <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse">
-        <div class="position-sticky sidebar-sticky">
-          <div class="text-center my-4">
-            <h6 class="sidebar-heading px-3 text-dark"><span>Dplay Bot</span></h6>
-          </div>
-          <ul class="nav flex-column">
-            <li class="nav-item"><a class="nav-link active" href="index.html">Dashboard</a></li>
-            <li class="nav-item"><a class="nav-link" href="instances.html">Conexões</a></li>
-            <li class="nav-item"><a class="nav-link" href="conversations.html">Conversas</a></li>
-            <li class="nav-item"><a class="nav-link" href="leads.html">Leads</a></li>
-            <li class="nav-item"><a class="nav-link" href="services.html">Configurar Bot</a></li>
-            <li class="nav-item"><a class="nav-link" href="usuarios.html">Usuários</a></li>
-            <li class="nav-item mt-auto"><a class="nav-link" href="account.html">Minha Conta</a></li>
-            <li class="nav-item"><a class="nav-link" href="#" id="logout-button">Logout</a></li>
-          </ul>
-        </div>
-      </nav>
+  <div class="login-card">
+    <div class="brand">🤖 Dplay Bot SaaS</div>
 
-      <!-- Main -->
-      <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-        <div class="page-header d-flex justify-content-between align-items-center my-3">
-          <h1>Dashboard</h1>
-        </div>
-
-        <p>Bem-vindo ao seu painel de controle. Aqui você monitora todos os bots e leads.</p>
-
-        <div class="row mb-3">
-          <div class="col-md-6">
-            <div class="card text-bg-dark mb-3">
-              <div class="card-body">
-                <h5 class="card-title">Bots Ativos</h5>
-                <p class="card-text" id="active-bots">Carregando...</p>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-6">
-            <div class="card text-bg-dark mb-3">
-              <div class="card-body">
-                <h5 class="card-title">Leads Capturados</h5>
-                <p class="card-text" id="leads-count">Carregando...</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-body">
-            <pre id="data-container">Carregando informações...</pre>
-          </div>
-        </div>
-      </main>
+    <div class="mb-3">
+      <label class="form-label">E-mail</label>
+      <input type="email" class="form-control" id="email" placeholder="Digite seu e-mail" />
     </div>
+
+    <div class="mb-3">
+      <label class="form-label">Senha</label>
+      <input type="password" class="form-control" id="password" placeholder="Digite sua senha" />
+    </div>
+
+    <button class="btn btn-primary w-100" id="loginBtn">Entrar</button>
+    <div class="text-center mt-3">
+      <small>Não tem conta? <a href="register.html">Cadastre-se</a></small>
+    </div>
+
+    <div id="msg" class="text-center mt-3 text-danger fw-bold"></div>
   </div>
 
-  <script src="js/auth.js"></script>
-  <script src="js/index.js"></script>
   <script>
-    protectPage();
+    document.getElementById("loginBtn").addEventListener("click", async () => {
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value.trim();
+      const msg = document.getElementById("msg");
+      msg.textContent = "";
+
+      try {
+        const endpoint = email.includes("admin") ? "/api/admin/login" : "/api/login";
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Falha ao autenticar");
+
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("role", data.role);
+        localStorage.setItem("name", data.name);
+
+        window.location.href = data.role === "admin" ? "admin.html" : "dashboard.html";
+      } catch (err) {
+        msg.textContent = err.message;
+      }
+    });
   </script>
 </body>
 </html>
