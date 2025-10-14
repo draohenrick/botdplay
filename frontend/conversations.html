@@ -1,47 +1,22 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
-    <title>Conversas - Dplay Bot</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Conversas - Dplay Bot</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="css/style.css" rel="stylesheet">
-    <style>
-        :root {
-            --primary-color: #0d6efd;
-            --border-color: #dee2e6;
-        }
-        body { font-family: 'Poppins', sans-serif; }
-        .chat-container { display: flex; height: calc(100vh - 220px); overflow: hidden; }
-        .chat-list { flex: 0 0 350px; border-right: 1px solid var(--border-color); overflow-y: auto; background: #f8f9fa; }
-        .chat-window { flex-grow: 1; display: flex; flex-direction: column; background: #fff; }
-        .chat-header { padding: 1rem; border-bottom: 1px solid var(--border-color); background-color: #f8f9fa; display: flex; flex-direction: column; }
-        .chat-messages { flex-grow: 1; overflow-y: auto; padding: 1rem; display: flex; flex-direction: column; gap: 0.5rem; scroll-behavior: smooth; }
-        .message { max-width: 70%; word-break: break-word; margin-bottom: 1rem; padding: .5rem 1rem; border-radius: 1rem; position: relative; }
-        .message.from-me { background-color: var(--primary-color); color: white; align-self: flex-end; }
-        .message.from-them { background-color: #e9ecef; color: black; align-self: flex-start; }
-        .message small { display: block; font-size: 0.65rem; color: #6c757d; margin-top: 0.2rem; text-align: right; }
-        .chat-input { border-top: 1px solid var(--border-color); padding: 1rem; background: #f8f9fa; }
-        .notification-dot { height: 10px; width: 10px; background-color: var(--primary-color); border-radius: 50%; display: inline-block; }
-        .text-truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .list-group-item.active { background-color: var(--primary-color); color: #fff; }
-        #alertPlaceholder { position: fixed; top: 10px; right: 10px; z-index: 1055; }
-        .date-divider { text-align:center; font-size:0.75rem; color:#6c757d; margin: 1rem 0; }
-        #searchInput { margin-bottom: 0.5rem; }
-        .typing-indicator { font-size: 0.8rem; color: #6c757d; margin-left: 0.5rem; }
-    </style>
 </head>
 <body>
-<div class="container-fluid">
-    <div class="row">
+    <div class="container-fluid">
+      <div class="row">
         <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse">
             <div class="position-sticky sidebar-sticky">
                 <div class="text-center my-4">
-                    <img id="user-logo" src="" alt="Logo do Cliente" style="display: none; max-width: 120px; max-height: 60px;">
-                    <h6 id="user-logo-text" class="sidebar-heading px-3 text-white"><span>Dplay Bot</span></h6>
+                    <h6 class="sidebar-heading px-3 text-dark"><span>Dplay Bot</span></h6>
                 </div>
-                <ul class="nav flex-column" style="height: calc(95% - 80px);">
+                <ul class="nav flex-column">
                     <li class="nav-item"><a class="nav-link" href="index.html">Dashboard</a></li>
                     <li class="nav-item"><a class="nav-link" href="instances.html">Conexões</a></li>
                     <li class="nav-item"><a class="nav-link active" href="conversations.html">Conversas</a></li>
@@ -53,245 +28,26 @@
                 </ul>
             </div>
         </nav>
-
+    
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
             <div class="page-header d-flex justify-content-between align-items-center my-3">
-                <h1>Atendimento ao Vivo</h1>
-                <div class="col-md-4">
-                    <select id="instanceFilter" class="form-select">
-                        <option selected value="">Ver todas as conexões</option>
-                    </select>
-                </div>
+                <h1>Conversas</h1>
             </div>
-            <input type="text" id="searchInput" class="form-control" placeholder="Buscar contatos...">
-            <div id="alertPlaceholder"></div>
+            
+            <p>Visualize o histórico de conversas dos seus bots.</p>
             <div class="card">
-                <div class="card-body p-0">
-                    <div class="chat-container">
-                        <div class="list-group list-group-flush chat-list" id="chat-list-container">
-                            <p class="text-center text-muted p-3">Aguardando mensagens...</p>
-                        </div>
-                        <div class="chat-window">
-                            <div class="chat-header" id="chat-header">
-                                <h5 class="mb-0">Selecione uma conversa <span id="typingIndicator" class="typing-indicator"></span></h5>
-                            </div>
-                            <div class="chat-messages" id="chat-messages-container">
-                                <p class="text-center text-muted m-auto">As mensagens aparecerão aqui.</p>
-                            </div>
-                            <div class="chat-input">
-                                <form id="message-form" class="input-group">
-                                    <input type="text" id="message-input" class="form-control" placeholder="Digite sua mensagem..." disabled>
-                                    <button class="btn btn-primary" type="submit" id="sendButton" disabled>Enviar</button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
+                <div class="card-body">
+                    <pre id="conversations-container">Carregando conversas...</pre>
                 </div>
             </div>
         </main>
+      </div>
     </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
-<script src="js/auth.js"></script>
-<script>
-protectPage();
-
-const conversations = new Map();
-let activeChatId = null;
-let instances = [];
-let typingTimeout = null;
-
-const chatListContainer = document.getElementById('chat-list-container');
-const chatHeader = document.getElementById('chat-header');
-const chatMessagesContainer = document.getElementById('chat-messages-container');
-const messageForm = document.getElementById('message-form');
-const messageInput = document.getElementById('message-input');
-const sendButton = document.getElementById('sendButton');
-const instanceFilter = document.getElementById('instanceFilter');
-const searchInput = document.getElementById('searchInput');
-const typingIndicator = document.getElementById('typingIndicator');
-
-const socket = io(BASE_URL);
-
-// Helpers
-function showAlert(message, type='info', timeout=3000) {
-    const wrapper = document.createElement('div');
-    wrapper.innerHTML = `
-        <div class="alert alert-${type} alert-dismissible fade show" role="alert">
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>`;
-    document.getElementById('alertPlaceholder').append(wrapper);
-    setTimeout(() => wrapper.remove(), timeout);
-}
-
-function scrollChatToBottom() {
-    chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
-}
-
-function formatDateDivider(timestamp) {
-    const date = new Date(timestamp * 1000);
-    return date.toLocaleDateString('pt-BR', { weekday:'long', day:'2-digit', month:'2-digit', year:'numeric' });
-}
-
-// Socket
-socket.on('new_message', (data) => {
-    const { chatId, contactName, message, instanceId, instanceName } = data;
-    if (!conversations.has(chatId)) {
-        conversations.set(chatId, { contactName, instanceId, instanceName, messages: [], unread: 0 });
-    }
-    const conv = conversations.get(chatId);
-    conv.messages.push(message);
-    if (chatId !== activeChatId) conv.unread++;
-    applyFilters();
-    if (chatId === activeChatId) {
-        scrollChatToBottom();
-        showTypingIndicator(false);
-    }
-});
-
-// Typing indicator
-function showTypingIndicator(active) {
-    typingIndicator.innerText = active ? 'digitando...' : '';
-}
-
-// UI
-function applyFilters() {
-    updateChatList(instanceFilter.value, searchInput.value.toLowerCase());
-}
-
-function updateChatList(filterInstanceId = '', searchTerm='') {
-    let visibleConversations = [...conversations.entries()].filter(([id, conv]) =>
-        (!filterInstanceId || conv.instanceId == filterInstanceId) &&
-        (!searchTerm || conv.contactName.toLowerCase().includes(searchTerm))
-    );
-
-    if (!visibleConversations.length) {
-        chatListContainer.innerHTML = '<p class="text-center text-muted p-3">Nenhuma conversa ativa para esta conexão.</p>';
-        return;
-    }
-
-    chatListContainer.innerHTML = '';
-    visibleConversations.sort((a, b) => {
-        const lastA = a[1].messages.at(-1)?.timestamp || 0;
-        const lastB = b[1].messages.at(-1)?.timestamp || 0;
-        return lastB - lastA;
-    }).forEach(([chatId, conv]) => {
-        const lastMsg = conv.messages.at(-1);
-        const chatItem = document.createElement('a');
-        chatItem.href = '#';
-        chatItem.className = `list-group-item list-group-item-action ${chatId === activeChatId ? 'active' : ''}`;
-        const unreadDot = conv.unread > 0 ? '<span class="notification-dot ms-2"></span>' : '';
-        const time = lastMsg ? new Date(lastMsg.timestamp * 1000).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
-        chatItem.innerHTML = `
-            <div class="d-flex w-100 justify-content-between">
-                <h6 class="mb-1 text-truncate">${conv.contactName}</h6>
-                <small class="text-muted">${time}</small>
-            </div>
-            <p class="mb-1 text-muted text-truncate d-flex align-items-center">${lastMsg?.body || ''} ${unreadDot}</p>
-            <small class="text-primary">${conv.instanceName}</small>
-        `;
-        chatItem.onclick = e => { e.preventDefault(); selectChat(chatId); };
-        chatListContainer.appendChild(chatItem);
-    });
-}
-
-function selectChat(chatId) {
-    if (!conversations.has(chatId)) return;
-    activeChatId = chatId;
-    const conv = conversations.get(chatId);
-    conv.unread = 0;
-    chatHeader.innerHTML = `<h5 class="mb-0">${conv.contactName} <span id="typingIndicator" class="typing-indicator"></span></h5><small class="text-muted">${chatId.split('@')[0]}</small>`;
-    updateChatList(instanceFilter.value, searchInput.value.toLowerCase());
-    renderMessages(chatId);
-    messageInput.disabled = false;
-    sendButton.disabled = false;
-    messageInput.focus();
-}
-
-function renderMessages(chatId) {
-    chatMessagesContainer.innerHTML = '';
-    const conv = conversations.get(chatId);
-    if (!conv) return;
-
-    let lastDate = '';
-    conv.messages.forEach(msg => {
-        const msgDate = formatDateDivider(msg.timestamp);
-        if (msgDate !== lastDate) {
-            const divider = document.createElement('div');
-            divider.className = 'date-divider';
-            divider.innerText = msgDate;
-            chatMessagesContainer.appendChild(divider);
-            lastDate = msgDate;
-        }
-        const div = document.createElement('div');
-        div.className = `message ${msg.fromMe ? 'from-me' : 'from-them'}`;
-        div.innerHTML = `${msg.body}<small>${new Date(msg.timestamp * 1000).toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'})}</small>`;
-        chatMessagesContainer.appendChild(div);
-    });
-    scrollChatToBottom();
-}
-
-// Send Message
-messageForm.addEventListener('submit', async e => {
-    e.preventDefault();
-    const msgText = messageInput.value.trim();
-    if (!msgText || !activeChatId) return;
-
-    const conv = conversations.get(activeChatId);
-    const number = activeChatId.split('@')[0];
-    const sentMsg = { fromMe: true, body: msgText, timestamp: Date.now() / 1000 };
-    conv.messages.push(sentMsg);
-    renderMessages(activeChatId);
-    updateChatList(instanceFilter.value, searchInput.value.toLowerCase());
-    messageInput.value = '';
-
-    try {
-        messageInput.disabled = true;
-        sendButton.disabled = true;
-        sendButton.innerHTML = `<span class="spinner-border spinner-border-sm"></span>`;
-        const res = await fetch(`${BASE_URL}/api/instances/${conv.instanceId}/send-message`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ number, message: msgText })
-        });
-        if (!res.ok) throw new Error('Falha ao enviar mensagem.');
-    } catch (err) {
-        console.error(err);
-        showAlert(err.message, 'danger');
-        conv.messages.pop();
-        conv.messages.push({ fromMe: true, body: `Falha ao enviar: "${msgText}"`, timestamp: Date.now() / 1000 });
-        renderMessages(activeChatId);
-    } finally {
-        messageInput.disabled = false;
-        sendButton.disabled = false;
-        sendButton.innerHTML = "Enviar";
-        messageInput.focus();
-    }
-});
-
-// Load Instances
-async function loadInstancesForFilter() {
-    try {
-        const res = await fetch(`${BASE_URL}/api/instances`);
-        if (res.status === 401 || res.status === 403) return logout();
-        instances = await res.json();
-        instances.forEach(inst => instanceFilter.innerHTML += `<option value="${inst.id}">${inst.name}</option>`);
-    } catch (e) {
-        console.error("Falha ao carregar instâncias", e);
-        showAlert("Erro ao carregar instâncias", "danger");
-    }
-}
-
-searchInput.addEventListener('input', () => applyFilters());
-instanceFilter.addEventListener('change', applyFilters);
-
-window.addEventListener('DOMContentLoaded', () => {
-    loadUserData();
-    loadInstancesForFilter();
-});
-</script>
+    
+    <script src="js/auth.js"></script>
+    <script src="js/conversations.js"></script>
+    <script>
+        protectPage();
+    </script>
 </body>
 </html>
