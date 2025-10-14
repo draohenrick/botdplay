@@ -1,45 +1,170 @@
 <!DOCTYPE html>
 <html lang="pt-BR" data-bs-theme="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Dashboard - Dplay Bot</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link href="css/style.css" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dashboard - Dplay Bot</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="css/style.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
+
 <body>
-    <div class="container-fluid">
-      <div class="row">
-        <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse">
-            <div class="position-sticky sidebar-sticky">
-                <div class="text-center my-4">
-                    <h6 class="sidebar-heading px-3 text-dark"><span>Dplay Bot</span></h6>
-                </div>
-                <ul class="nav flex-column">
-                    <li class="nav-item"><a class="nav-link active" href="index.html">Dashboard</a></li>
-                    <li class="nav-item"><a class="nav-link" href="instances.html">Conexões</a></li>
-                    <li class="nav-item"><a class="nav-link" href="conversations.html">Conversas</a></li>
-                    <li class="nav-item"><a class="nav-link" href="leads.html">Leads</a></li>
-                    <li class="nav-item"><a class="nav-link" href="services.html">Configurar Bot</a></li>
-                    <li class="nav-item"><a class="nav-link" href="usuarios.html">Usuários</a></li>
-                    <li class="nav-item mt-auto"><a class="nav-link" href="account.html">Minha Conta</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#" onclick="logout()">Logout</a></li>
-                </ul>
+  <div class="container-fluid">
+    <div class="row">
+      <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+        <div class="position-sticky sidebar-sticky">
+          <div class="text-center my-4">
+            <h6 class="sidebar-heading px-3 text-dark"><span>Dplay Bot</span></h6>
+          </div>
+          <ul class="nav flex-column">
+            <li class="nav-item"><a class="nav-link active" href="index.html">Dashboard</a></li>
+            <li class="nav-item"><a class="nav-link" href="instances.html">Conexões</a></li>
+            <li class="nav-item"><a class="nav-link" href="conversations.html">Conversas</a></li>
+            <li class="nav-item"><a class="nav-link" href="leads.html">Leads</a></li>
+            <li class="nav-item"><a class="nav-link" href="services.html">Configurar Bot</a></li>
+            <li class="nav-item"><a class="nav-link" href="usuarios.html">Usuários</a></li>
+            <li class="nav-item mt-auto"><a class="nav-link" href="account.html">Minha Conta</a></li>
+            <li class="nav-item"><a class="nav-link" href="#" onclick="logout()">Logout</a></li>
+          </ul>
+        </div>
+      </nav>
+
+      <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+        <div class="page-header d-flex justify-content-between align-items-center my-3">
+          <h1>Dashboard</h1>
+        </div>
+
+        <!-- Cards principais -->
+        <div class="row g-3 mb-4">
+          <div class="col-md-3">
+            <div class="card text-bg-dark shadow-sm">
+              <div class="card-body">
+                <h5 class="card-title">Leads</h5>
+                <h2 id="leadCount">0</h2>
+                <p class="card-text"><small>Novos neste mês</small></p>
+              </div>
             </div>
-        </nav>
-    
-        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-            <div class="page-header d-flex justify-content-between align-items-center my-3">
-                <h1>Dashboard</h1>
+          </div>
+          <div class="col-md-3">
+            <div class="card text-bg-dark shadow-sm">
+              <div class="card-body">
+                <h5 class="card-title">Conversas Ativas</h5>
+                <h2 id="conversationCount">0</h2>
+                <p class="card-text"><small>Usuários em contato</small></p>
+              </div>
             </div>
-            </main>
-      </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card text-bg-dark shadow-sm">
+              <div class="card-body">
+                <h5 class="card-title">Conexões</h5>
+                <h2 id="connectionCount">0</h2>
+                <p class="card-text"><small>Ativas no momento</small></p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card text-bg-dark shadow-sm">
+              <div class="card-body">
+                <h5 class="card-title">Status do Bot</h5>
+                <h2 id="botStatus" class="text-success">Online</h2>
+                <p class="card-text"><small>Monitoramento em tempo real</small></p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Gráfico -->
+        <div class="card text-bg-dark shadow-sm mb-4">
+          <div class="card-body">
+            <h5 class="card-title">Atividade Semanal</h5>
+            <canvas id="activityChart" height="100"></canvas>
+          </div>
+        </div>
+
+        <!-- Logs recentes -->
+        <div class="card text-bg-dark shadow-sm mb-4">
+          <div class="card-body">
+            <h5 class="card-title">Atividades Recentes</h5>
+            <ul id="logList" class="list-group list-group-flush bg-transparent">
+              <li class="list-group-item bg-transparent text-light border-secondary">Carregando logs...</li>
+            </ul>
+          </div>
+        </div>
+
+      </main>
     </div>
-    
-    <script src="js/auth.js"></script> <script src="js/index.js"></script> <script>
-        protectPage(); // Protege a página
-        // O restante da lógica está em index.js
-    </script>
+  </div>
+
+  <script src="js/auth.js"></script>
+  <script src="js/index.js"></script>
+
+  <script>
+    protectPage(); // protege a página
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // Simulação de dados — substitua futuramente por chamadas API
+      const dashboardData = {
+        leads: 124,
+        conversations: 18,
+        connections: 5,
+        botOnline: true,
+        logs: [
+          "Nova conexão WhatsApp criada",
+          "Bot respondeu a um usuário",
+          "Novo lead adicionado",
+          "Conversa encerrada com sucesso",
+          "Atualização de configuração do bot"
+        ]
+      };
+
+      // Atualiza métricas
+      document.getElementById('leadCount').textContent = dashboardData.leads;
+      document.getElementById('conversationCount').textContent = dashboardData.conversations;
+      document.getElementById('connectionCount').textContent = dashboardData.connections;
+      document.getElementById('botStatus').textContent = dashboardData.botOnline ? 'Online' : 'Offline';
+      document.getElementById('botStatus').classList.toggle('text-success', dashboardData.botOnline);
+      document.getElementById('botStatus').classList.toggle('text-danger', !dashboardData.botOnline);
+
+      // Preenche logs
+      const logList = document.getElementById('logList');
+      logList.innerHTML = '';
+      dashboardData.logs.forEach(log => {
+        const li = document.createElement('li');
+        li.className = 'list-group-item bg-transparent text-light border-secondary';
+        li.textContent = log;
+        logList.appendChild(li);
+      });
+
+      // Gráfico
+      const ctx = document.getElementById('activityChart');
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
+          datasets: [{
+            label: 'Mensagens Processadas',
+            data: [45, 60, 52, 80, 70, 110, 90],
+            borderColor: 'rgba(75, 192, 192, 1)',
+            tension: 0.3,
+            fill: false,
+            pointRadius: 4,
+            borderWidth: 2
+          }]
+        },
+        options: {
+          scales: {
+            x: { grid: { color: 'rgba(255,255,255,0.1)' } },
+            y: { grid: { color: 'rgba(255,255,255,0.1)' }, beginAtZero: true }
+          },
+          plugins: {
+            legend: { labels: { color: 'white' } }
+          }
+        }
+      });
+    });
+  </script>
 </body>
 </html>
