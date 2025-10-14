@@ -13,12 +13,15 @@ let db;
 // Função que será chamada pelo server.js para conectar ao banco de dados
 const connectToDatabase = async () => {
     try {
+        // Conecta ao servidor
         await client.connect();
-        db = client.db(); 
+        // Define a variável 'db' para podermos usar em outras funções
+        db = client.db();
         console.log("✅ Conectado ao MongoDB Atlas com sucesso!");
     } catch (error) {
         console.error("❌ Erro ao conectar ao MongoDB Atlas:", error);
-        process.exit(1); // Encerra a aplicação se a conexão com o DB falhar
+        // Encerra a aplicação se a conexão com o DB falhar
+        process.exit(1);
     }
 };
 
@@ -33,7 +36,7 @@ const getInstances = async () => await db.collection('instances').find({}).toArr
 
 
 // --- Exportação dos Módulos ---
-// IMPORTANTE: Exportamos a função de conexão junto com as outras
+// Exportamos a função de conexão junto com as outras
 module.exports = {
     connectToDatabase,
     getUsers,
