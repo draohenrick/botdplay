@@ -21,11 +21,9 @@ app.use(cors());
 app.use(bodyParser.json());
 
 // --- GERENCIADOR DE BOTS ATIVOS ---
-// Um mapa para guardar as instâncias de bot que estão rodando
 const activeInstances = new Map();
 
 // --- LÓGICA DO SOCKET.IO ---
-// O frontend se conectará aqui para receber atualizações em tempo real (como o QR Code)
 io.on('connection', (socket) => {
     console.log('Um usuário se conectou ao socket:', socket.id);
     
@@ -49,6 +47,18 @@ app.use('/api/auth', authRoutes);
 app.use(authMiddleware);
 
 // --- ROTAS PROTEGIDAS (GERENCIAMENTO DO BOT) ---
+
+// Rota para LISTAR as instâncias do usuário logado
+app.get('/api/instances', async (req, res) => {
+    try {
+        // Usa a função do db.js para buscar apenas as instâncias que pertencem a este usuário
+        const instances = await db.getInstancesByOwner(req.user.id);
+        res.json(instances);
+    } catch (error) {
+        console.error("Erro ao buscar instâncias:", error);
+        res.status(500).json({ error: "Erro interno do servidor." });
+    }
+});
 
 // Rota para CRIAR e CONECTAR uma nova instância de bot
 app.post('/api/instances/connect', async (req, res) => {
@@ -116,7 +126,7 @@ app.post('/api/instances/:id/disconnect', async (req, res) => {
     }
 });
 
-// (Outras rotas como /api/leads, /api/account, etc. continuam as mesmas)
+// (Outras rotas como /api/leads, /api/account, etc. podem ser adicionadas aqui)
 
 
 // --- INICIALIZAÇÃO DO SERVIDOR ---
