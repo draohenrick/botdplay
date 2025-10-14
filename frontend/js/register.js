@@ -1,61 +1,51 @@
-const API_URL = "https://botdplay.onrender.com"; // ajuste se a rota for diferente
+// A URL do seu backend no Render
+const BACKEND_URL = 'https://botdplay.onrender.com';
 
-document.getElementById("register-form").addEventListener("submit", async (event) => {
-  event.preventDefault();
+// --- Elementos do Formulário ---
+const registerForm = document.getElementById('register-form');
+const nameInput = document.getElementById('name-input');
+const emailInput = document.getElementById('email-input');
+const passwordInput = document.getElementById('password-input');
+const message = document.getElementById('message'); // Um <p> para mostrar mensagens
 
-  const nome = document.getElementById("nome").value.trim();
-  const email = document.getElementById("email").value.trim();
-  const telefone = document.getElementById("telefone").value.trim();
-  const senha = document.getElementById("senha").value.trim();
-  const empresa = document.getElementById("empresa").value.trim();
-  const segmento = document.getElementById("segmento").value;
-  const descricao = document.getElementById("descricao").value.trim();
-  const endereco = document.getElementById("endereco").value.trim();
-  const horario = document.getElementById("horario").value.trim();
-  const msg = document.getElementById("message");
+// --- Lógica do Registro ---
+registerForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    message.textContent = '';
+    message.className = 'mt-3 text-center'; // Reseta o estilo da mensagem
 
-  msg.textContent = "Enviando informações...";
-  msg.style.color = "#fff";
+    const nome = nameInput.value;
+    const email = emailInput.value;
+    const password = passwordInput.value;
 
-  try {
-    const response = await fetch(`${API_URL}/register`, { // Ajuste de rota
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        nome,
-        email,
-        telefone,
-        senha,
-        empresa,
-        segmento,
-        descricao,
-        endereco,
-        horario
-      })
-    });
+    try {
+        // CORREÇÃO: A URL foi ajustada para o caminho correto da API
+        const response = await fetch(`${BACKEND_URL}/api/auth/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nome, email, password }),
+        });
 
-    // Confere se o response é JSON
-    let data;
-    const contentType = response.headers.get("content-type");
-    if (contentType && contentType.includes("application/json")) {
-      data = await response.json();
-    } else {
-      data = { error: "Resposta inesperada do servidor" };
+        const data = await response.json();
+
+        if (!response.ok) {
+            // Se o backend retornou um erro
+            message.classList.add('text-danger');
+            message.textContent = data.error || 'Falha no registro.';
+            return;
+        }
+
+        // Se o registro foi bem-sucedido
+        message.classList.add('text-success');
+        message.textContent = 'Registro realizado com sucesso! Redirecionando para o login...';
+        
+        // Espera 2 segundos e redireciona para a página de login
+        setTimeout(() => {
+            window.location.href = '/login.html';
+        }, 2000);
+
+    } catch (error) {
+        message.classList.add('text-danger');
+        message.textContent = 'Erro de conexão. Verifique sua internet ou tente mais tarde.';
     }
-
-    if (response.ok) {
-      msg.textContent = "✅ Conta criada com sucesso! Redirecionando...";
-      msg.style.color = "limegreen";
-      setTimeout(() => window.location.href = "/login.html", 2000);
-    } else {
-      msg.textContent = data.error || "❌ Falha ao registrar. Verifique os campos.";
-      msg.style.color = "red";
-      console.error("Erro do backend:", data);
-    }
-
-  } catch (error) {
-    console.error("Erro de conexão:", error);
-    msg.textContent = "❌ Erro ao conectar com o servidor.";
-    msg.style.color = "red";
-  }
 });
