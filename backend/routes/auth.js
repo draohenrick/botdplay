@@ -1,68 +1,80 @@
 const express = require('express');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const db = require('../db');
-
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET;
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
 
+const SECRET = process.env.JWT_SECRET || 'dplaysecret';
+
+// Banco simulado (compartilhado com account.js)
+const usuarios = [
+  {
+    id: 1,
+    nome: 'Drão Henrick',
+    email: 'admin@dplay.com',
+    empresa: 'Dplay Bot',
+    senha: bcrypt.hashSync('123456', 10),
+    role: 'admin',
+    whatsapp: '+55 11 99999-9999',
+    codigo: 'ADM-0001',
+    bots: [
+      { id: 1, name: 'Bot Atendimento', status: 'Online' },
+      { id: 2, name: 'Bot Vendas', status: 'Offline' }
+    ],
+    leads: 54
+  }
+];
+
+// 🔹 Registro
 router.post('/register', async (req, res) => {
-    const { nome, email, password } = req.body;
+  const { nome, email, telefone, senha, empresa, segmento, descricao, endereco, horario } = req.body;
 
-    if (!nome || !email || !password) {
-        return res.status(400).json({ error: 'Nome, e-mail e senha são obrigatórios.' });
-    }
+  if (!nome || !email || !senha) {
+    return res.status(400).json({ error: 'Nome, email e senha são obrigatórios.' });
+  }
 
-    try {
-        const existingUser = await db.getUserByEmail(email);
-        if (existingUser) {
-            return res.status(409).json({ error: 'Este e-mail já está em uso.' });
-        }
-        
-        const hashedPassword = await bcrypt.hash(password, 10);
-        
-        const newUser = {
-            nome,
-            email,
-            password: hashedPassword,
-        };
-        
-        await db.addUser(newUser);
-        res.status(201).json({ message: 'Usuário registrado com sucesso!' });
+  const existingUser = usuarios.find(u => u.email === email);
+  if (existingUser) {
+    return res.status(409).json({ error: 'Usuário já existe.' });
+  }
 
-    } catch (error) {
-        console.error("Erro detalhado no registro:", error); 
-        res.status(500).json({ error: 'Erro interno ao registrar usuário.' });
-    }
+  const hashedPassword = await bcrypt.hash(senha, 10);
+
+  const newUser = {
+    id: usuarios.length + 1,
+    nome,
+    email,
+    telefone,
+    senha: hashedPassword,
+    empresa,
+    segmento,
+    descricao,
+    endereco,
+    horario,
+    role: 'user',
+    bots: [],
+    leads: 0
+  };
+
+  usuarios.push(newUser);
+
+  res.status(201).json({ success: true, message: 'Conta criada com sucesso!' });
 });
 
+// 🔹 Login
 router.post('/login', async (req, res) => {
-    const { email, password } = req.body;
-    
-    try {
-        const user = await db.getUserByEmail(email);
-        if (!user) {
-            return res.status(404).json({ error: 'Usuário não encontrado.' });
-        }
+  const { email, senha } = req.body;
 
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) {
-            return res.status(401).json({ error: 'Senha inválida.' });
-        }
-        
-        const userId = user._id.toString();
-        const token = jwt.sign(
-            { id: userId, email: user.email, nome: user.nome },
-            JWT_SECRET,
-            { expiresIn: '24h' }
-        );
+  if (!email || !senha) return res.status(400).json({ error: 'Email e senha são obrigatórios.' });
 
-        res.json({ message: 'Login bem-sucedido!', token });
+  const user = usuarios.find(u => u.email === email);
+  if (!user) return res.status(401).json({ error: 'Usuário ou senha inválidos.' });
 
-    } catch (error) {
-        console.error("Erro no login:", error);
-        res.status(500).json({ error: 'Erro interno ao fazer login.' });
-    }
+  const validPassword = await bcrypt.compare(senha, user.senha);
+  if (!validPassword) return res.status(401).json({ error: 'Usuário ou senha inválidos.' });
+
+  const token = jwt.sign({ email: user.email, role: user.role }, SECRET, { expiresIn: '2h' });
+
+  res.json({ token, role: user.role });
 });
 
 module.exports = router;
