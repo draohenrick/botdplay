@@ -1,3 +1,5 @@
+const API_URL = "https://botdplay.onrender.com"; // ajuste se a rota for diferente
+
 document.getElementById("register-form").addEventListener("submit", async (event) => {
   event.preventDefault();
 
@@ -16,7 +18,7 @@ document.getElementById("register-form").addEventListener("submit", async (event
   msg.style.color = "#fff";
 
   try {
-    const response = await fetch("https://botdplay.onrender.com/api/register", {
+    const response = await fetch(`${API_URL}/register`, { // Ajuste de rota
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -32,7 +34,14 @@ document.getElementById("register-form").addEventListener("submit", async (event
       })
     });
 
-    const data = await response.json();
+    // Confere se o response é JSON
+    let data;
+    const contentType = response.headers.get("content-type");
+    if (contentType && contentType.includes("application/json")) {
+      data = await response.json();
+    } else {
+      data = { error: "Resposta inesperada do servidor" };
+    }
 
     if (response.ok) {
       msg.textContent = "✅ Conta criada com sucesso! Redirecionando...";
