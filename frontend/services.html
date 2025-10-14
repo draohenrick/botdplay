@@ -11,6 +11,7 @@
 <body>
     <div class="container-fluid">
       <div class="row">
+        <!-- Sidebar -->
         <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse">
             <div class="position-sticky sidebar-sticky">
                 <div class="text-center my-4">
@@ -29,25 +30,118 @@
             </div>
         </nav>
     
+        <!-- Main -->
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
             <div class="page-header d-flex justify-content-between align-items-center my-3">
                 <h1>Configurar Bot</h1>
+                <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addServiceModal">
+                    + Novo Fluxo
+                </button>
             </div>
             
-            <p>Gerencie os serviços e fluxos do seu bot.</p>
+            <p>Gerencie os serviços, fluxos e respostas automáticas do seu bot.</p>
+
+            <!-- Search -->
+            <div class="input-group mb-3">
+                <input type="text" id="searchService" class="form-control" placeholder="Buscar fluxo por nome...">
+                <button class="btn btn-outline-secondary" type="button" onclick="filterServices()">Buscar</button>
+            </div>
+
+            <!-- Services List -->
             <div class="card">
                 <div class="card-body">
-                    <pre id="services-container">Carregando serviços...</pre>
+                    <div id="services-container" class="table-responsive">
+                        <table class="table table-dark table-striped align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Nome do Fluxo</th>
+                                    <th>Descrição</th>
+                                    <th>Ativo</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="servicesTableBody">
+                                <tr><td colspan="4" class="text-center">Carregando serviços...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
+
+            <!-- Modal: Novo Serviço -->
+            <div class="modal fade" id="addServiceModal" tabindex="-1" aria-labelledby="addServiceLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg modal-dialog-centered">
+                    <div class="modal-content bg-dark text-light">
+                        <div class="modal-header border-secondary">
+                            <h5 class="modal-title" id="addServiceLabel">Criar Novo Fluxo do Bot</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="newServiceForm">
+                                <div class="mb-3">
+                                    <label for="serviceName" class="form-label">Nome do Fluxo</label>
+                                    <input type="text" id="serviceName" name="name" class="form-control" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="serviceDescription" class="form-label">Descrição</label>
+                                    <textarea id="serviceDescription" name="description" class="form-control" rows="3" required></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="serviceKeywords" class="form-label">Palavras-chave (separadas por vírgula)</label>
+                                    <input type="text" id="serviceKeywords" name="keywords" class="form-control">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="serviceResponse" class="form-label">Resposta Automática</label>
+                                    <textarea id="serviceResponse" name="response" class="form-control" rows="3" placeholder="Mensagem que o bot responderá automaticamente..."></textarea>
+                                </div>
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="serviceActive" checked>
+                                    <label class="form-check-label" for="serviceActive">Ativar este fluxo</label>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer border-secondary">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="button" class="btn btn-success" onclick="saveNewService()">Salvar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </main>
       </div>
     </div>
-    
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/services.js"></script>
     <script>
         protectPage();
+
+        // Filtrar serviços localmente
+        function filterServices() {
+            const query = document.getElementById('searchService').value.toLowerCase();
+            const rows = document.querySelectorAll('#servicesTableBody tr');
+            rows.forEach(row => {
+                const name = row.cells[0]?.innerText.toLowerCase() || '';
+                row.style.display = name.includes(query) ? '' : 'none';
+            });
+        }
+
+        // Salvar novo serviço (mock)
+        function saveNewService() {
+            const name = document.getElementById('serviceName').value.trim();
+            const desc = document.getElementById('serviceDescription').value.trim();
+            if (!name || !desc) {
+                alert('Preencha todos os campos obrigatórios!');
+                return;
+            }
+            alert(`Novo fluxo "${name}" criado com sucesso!`);
+            document.getElementById('newServiceForm').reset();
+            const modal = bootstrap.Modal.getInstance(document.getElementById('addServiceModal'));
+            modal.hide();
+        }
     </script>
 </body>
 </html>
