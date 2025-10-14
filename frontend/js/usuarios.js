@@ -1,17 +1,25 @@
+// URL do backend
 const BACKEND_URL = 'https://botdplay.onrender.com';
 
-const logoutButton = document.getElementById('logout-button');
+// Elementos da página
+const usersContainer = document.getElementById('users-container');
+const logoutLinks = document.querySelectorAll('[onclick="logout()"]'); // todos links de logout
 
-async function loadUsuariosPage() {
+// Função para proteger página
+function protectPage() {
     const token = localStorage.getItem('authToken');
     if (!token) {
-        alert('Acesso negado. Por favor, faça login para continuar.');
+        alert('Acesso negado. Faça login para continuar.');
         window.location.href = '/login.html';
-        return;
     }
+}
+
+// Função para carregar os usuários
+async function loadUsuariosPage() {
+    const token = localStorage.getItem('authToken');
+    if (!token) return;
 
     try {
-        // ROTA ESPECÍFICA DESTA PÁGINA
         const response = await fetch(`${BACKEND_URL}/api/users`, {
             method: 'GET',
             headers: {
@@ -22,30 +30,77 @@ async function loadUsuariosPage() {
 
         if (response.status === 401 || response.status === 403) {
             localStorage.removeItem('authToken');
-            alert('Sua sessão expirou. Por favor, faça login novamente.');
+            alert('Sua sessão expirou. Faça login novamente.');
             window.location.href = '/login.html';
             return;
         }
 
-        const data = await response.json();
+        const users = await response.json();
 
-        // FAÇA ALGO COM OS DADOS
-        // Exemplo: exiba os usuários em uma tabela de administração
-        console.log('Usuários recebidos:', data);
-        const dataContainer = document.getElementById('users-container'); // Crie um elemento com este ID
-        if(dataContainer) dataContainer.textContent = JSON.stringify(data, null, 2);
+        if (usersContainer) {
+            if (users.length === 0) {
+                usersContainer.textContent = 'Nenhum usuário encontrado.';
+                return;
+            }
+
+            // Cria tabela de usuários
+            const table = document.createElement('table');
+            table.className = 'table table-striped';
+            table.innerHTML = `
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Email</th>
+                        <th>Função</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${users.map(user => `
+                        <tr>
+                            <td>${user.name}</td>
+                            <td>${user.email}</td>
+                            <td>${user.role}</td>
+                            <td>
+                                <button class="btn btn-sm btn-primary me-2" onclick="editUser('${user.id}')">Editar</button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteUser('${user.id}')">Excluir</button>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            `;
+            usersContainer.innerHTML = '';
+            usersContainer.appendChild(table);
+        }
 
     } catch (error) {
-        console.error('Erro ao carregar os dados da página de usuários:', error);
+        if (usersContainer) usersContainer.textContent = 'Erro ao carregar os usuários.';
+        console.error('Erro ao carregar usuários:', error);
     }
 }
 
-if (logoutButton) {
-    logoutButton.addEventListener('click', () => {
-        localStorage.removeItem('authToken');
-        alert('Você saiu com sucesso.');
-        window.location.href = '/login.html';
-    });
+// Função de logout
+function logout() {
+    localStorage.removeItem('authToken');
+    alert('Você saiu com sucesso.');
+    window.location.href = '/login.html';
 }
 
+// Associa logout a todos os links com onclick="logout()"
+logoutLinks.forEach(link => link.addEventListener('click', logout));
+
+// Funções para editar e excluir usuários
+function editUser(id) {
+    alert(`Função de editar usuário ID: ${id} ainda não implementada.`);
+    // Aqui você pode abrir modal para editar usuário
+}
+
+function deleteUser(id) {
+    if (!confirm('Deseja realmente excluir este usuário?')) return;
+    alert(`Função de deletar usuário ID: ${id} ainda não implementada.`);
+    // Aqui você pode chamar backend DELETE /api/users/:id
+}
+
+// Executa proteção e carregamento ao abrir a página
+protectPage();
 loadUsuariosPage();
