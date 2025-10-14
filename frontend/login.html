@@ -1,90 +1,26 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Login - Dplay Bot</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link href="css/style.css" rel="stylesheet">
-    <style> body { background-color: var(--body-bg, #eef2f6); } </style>
-</head>
-<body class="d-flex align-items-center justify-content-center vh-100">
-    <div class="card shadow-sm" style="width: 25rem;">
-        <div class="card-body p-4">
-
-            <div class="text-center mb-4">
-                <img src="https://via.placeholder.com/150x50.png?text=Sua+Logo" alt="Logo" class="mb-3" style="max-width: 150px;">
-                <h3 class="fw-bold">Bem-vindo de Volta!</h3>
-                <p class="text-muted">Acesse seu painel para gerenciar seus bots.</p>
-            </div>
-
-            <div id="alertPlaceholder"></div>
-            <form id="loginForm" novalidate>
-                <div class="mb-3">
-                    <label for="email" class="form-label">Email</label>
-                    <input type="email" class="form-control" id="email" required autocomplete="email">
-                </div>
-                <div class="mb-3">
-                    <label for="password" class="form-label">Senha</label>
-                    <input type="password" class="form-control" id="password" required autocomplete="current-password">
-                </div>
-                <button type="submit" id="submitButton" class="btn btn-primary w-100 mt-3">
-                    Entrar
-                </button>
-            </form>
-            <div class="text-center mt-3">
-                <a href="register.html">Não tem uma conta? Registre-se</a>
-            </div>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    </head>
+<body>
+    <h1>Bem-vindo de Volta!</h1>
+    <form id="login-form">
+        <div>
+            <label for="email-input">Email</label>
+            <input type="email" id="email-input" required>
         </div>
-    </div>
+        <div>
+            <label for="password-input">Senha</label>
+            <input type="password" id="password-input" required>
+        </div>
+        <button type="submit">Entrar</button>
+    </form>
+    <p id="error-message" style="color: red;"></p>
+    <a href="/register.html">Não tem uma conta? Registre-se</a>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="js/auth.js"></script>
-<script>
-    const form = document.getElementById('loginForm');
-    const emailInput = document.getElementById('email');
-    const passwordInput = document.getElementById('password');
-    const submitButton = document.getElementById('submitButton');
-
-    document.addEventListener('DOMContentLoaded', () => {
-        // Esta função do auth.js verifica se já existe um token e redireciona
-        redirectIfLoggedIn();
-    });
-
-    form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const email = emailInput.value;
-        const password = passwordInput.value;
-        const originalButtonText = submitButton.innerHTML;
-
-        // Feedback visual para o usuário
-        submitButton.disabled = true;
-        submitButton.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Entrando...`;
-
-        try {
-            // A função fetch agora é interceptada pelo auth.js, que adiciona os headers
-            const res = await fetch(`${BASE_URL}/api/auth/login`, {
-                method: 'POST',
-                body: JSON.stringify({ email, password })
-            });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Erro desconhecido.');
-
-            localStorage.setItem(DPLAY_TOKEN_KEY, data.token);
-            
-            // Redirecionamento correto
-            window.location.href = 'index.html';
-
-        } catch (error) {
-            // A função showAlert agora vem do auth.js
-            showAlert(error.message);
-        } finally {
-            // Garante que o botão volte ao normal, mesmo em caso de erro
-            submitButton.disabled = false;
-            submitButton.innerHTML = originalButtonText;
-        }
-    });
-</script>
+    <script src="/js/login.js"></script>
 </body>
 </html>
