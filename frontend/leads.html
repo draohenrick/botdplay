@@ -11,6 +11,7 @@
 <body>
     <div class="container-fluid">
       <div class="row">
+        <!-- Sidebar -->
         <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse">
             <div class="position-sticky sidebar-sticky">
                 <div class="text-center my-4">
@@ -28,26 +29,154 @@
                 </ul>
             </div>
         </nav>
-    
+
+        <!-- Conteúdo principal -->
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
             <div class="page-header d-flex justify-content-between align-items-center my-3">
                 <h1>Leads</h1>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-light btn-sm" id="refresh-leads">🔄 Atualizar</button>
+                    <button class="btn btn-success btn-sm" id="export-csv">📁 Exportar CSV</button>
+                </div>
             </div>
             
             <p>Aqui você irá visualizar todos os leads capturados.</p>
+
+            <!-- Filtros -->
+            <div class="card mb-3">
+                <div class="card-body d-flex flex-wrap gap-2 align-items-center">
+                    <input type="text" id="search-lead" class="form-control form-control-sm w-auto" placeholder="Buscar por nome, e-mail ou telefone...">
+                    <select id="status-filter" class="form-select form-select-sm w-auto">
+                        <option value="all">Todos os Status</option>
+                        <option value="new">Novo</option>
+                        <option value="in_progress">Em negociação</option>
+                        <option value="converted">Convertido</option>
+                        <option value="lost">Perdido</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Lista de Leads -->
             <div class="card">
                 <div class="card-body">
-                    <pre id="leads-container">Carregando leads...</pre>
+                    <div id="leads-container" class="list-group">
+                        <div class="text-center text-muted py-3">Carregando leads...</div>
+                    </div>
                 </div>
             </div>
         </main>
       </div>
     </div>
-    
+
+    <!-- Modal Detalhes do Lead -->
+    <div class="modal fade" id="leadModal" tabindex="-1" aria-labelledby="leadModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content bg-dark text-light">
+          <div class="modal-header">
+            <h5 class="modal-title" id="leadModalLabel">Detalhes do Lead</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body" id="lead-details">
+            <p>Carregando informações...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/leads.js"></script>
     <script>
         protectPage();
+
+        const searchInput = document.getElementById('search-lead');
+        const statusFilter = document.getElementById('status-filter');
+        const leadsContainer = document.getElementById('leads-container');
+        const refreshBtn = document.getElementById('refresh-leads');
+        const exportBtn = document.getElementById('export-csv');
+
+        searchInput.addEventListener('input', filterLeads);
+        statusFilter.addEventListener('change', filterLeads);
+        refreshBtn.addEventListener('click', loadLeads);
+        exportBtn.addEventListener('click', exportLeadsToCSV);
+
+        function loadLeads() {
+            leadsContainer.innerHTML = `
+                <a href="#" class="list-group-item list-group-item-action bg-dark text-light lead-item" 
+                    data-name="João Silva" data-email="joao@email.com" data-phone="(11) 99999-9999"
+                    data-status="new" data-origin="Site" data-notes="Solicitou contato via formulário"
+                    onclick="openLead(this)">
+                    🧩 <strong>João Silva</strong> - Novo lead
+                </a>
+                <a href="#" class="list-group-item list-group-item-action bg-dark text-light lead-item" 
+                    data-name="Maria Oliveira" data-email="maria@email.com" data-phone="(21) 98888-8888"
+                    data-status="converted" data-origin="Instagram" data-notes="Fechou contrato em 10/10"
+                    onclick="openLead(this)">
+                    ✅ <strong>Maria Oliveira</strong> - Convertido
+                </a>
+            `;
+        }
+
+        function openLead(el) {
+            const modal = new bootstrap.Modal(document.getElementById('leadModal'));
+            const details = document.getElementById('lead-details');
+
+            details.innerHTML = `
+                <h5>${el.dataset.name}</h5>
+                <p><strong>E-mail:</strong> ${el.dataset.email}</p>
+                <p><strong>Telefone:</strong> ${el.dataset.phone}</p>
+                <p><strong>Status:</strong> ${formatStatus(el.dataset.status)}</p>
+                <p><strong>Origem:</strong> ${el.dataset.origin}</p>
+                <p><strong>Notas:</strong> ${el.dataset.notes}</p>
+            `;
+            modal.show();
+        }
+
+        function formatStatus(status) {
+            switch(status) {
+                case 'new': return 'Novo';
+                case 'in_progress': return 'Em negociação';
+                case 'converted': return 'Convertido';
+                case 'lost': return 'Perdido';
+                default: return 'Desconhecido';
+            }
+        }
+
+        function filterLeads() {
+            const searchValue = searchInput.value.toLowerCase();
+            const statusValue = statusFilter.value;
+            const leads = document.querySelectorAll('.lead-item');
+
+            leads.forEach(item => {
+                const name = item.dataset.name.toLowerCase();
+                const email = item.dataset.email.toLowerCase();
+                const phone = item.dataset.phone.toLowerCase();
+                const status = item.dataset.status;
+
+                const matchesSearch = name.includes(searchValue) || email.includes(searchValue) || phone.includes(searchValue);
+                const matchesStatus = statusValue === 'all' || status === statusValue;
+
+                item.style.display = matchesSearch && matchesStatus ? '' : 'none';
+            });
+        }
+
+        function exportLeadsToCSV() {
+            const leads = document.querySelectorAll('.lead-item');
+            let csv = "Nome,E-mail,Telefone,Status,Origem,Notas\n";
+
+            leads.forEach(item => {
+                csv += `"${item.dataset.name}","${item.dataset.email}","${item.dataset.phone}","${formatStatus(item.dataset.status)}","${item.dataset.origin}","${item.dataset.notes}"\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'leads.csv';
+            link.click();
+        }
+
+        document.addEventListener('DOMContentLoaded', loadLeads);
     </script>
 </body>
 </html>
