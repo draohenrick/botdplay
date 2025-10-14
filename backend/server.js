@@ -1,144 +1,80 @@
-/**
- * DPLAY BOT SERVER - API Principal do SaaS
- * Estrutura robusta com autenticação JWT, multiusuário e painel admin.
- */
-
-const express = require("express");
-const fs = require("fs");
-const path = require("path");
-const cors = require("cors");
-const jwt = require("jsonwebtoken");
-const bodyParser = require("body-parser");
+// server.js
+const express = require('express');
+const cors = require('cors');
+const bodyParser = require('body-parser');
+const fs = require('fs');
+const path = require('path');
+const jwt = require('jsonwebtoken');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const SECRET = process.env.JWT_SECRET || "dplay_secret_key";
 
-const DATA_DIR = process.env.NODE_ENV === "production" ? "/data" : __dirname;
-const DB_FILE = path.join(DATA_DIR, "db.json");
+// Diretório do banco de dados JSON
+const DATA_DIR = __dirname;
+const DB_FILE = path.join(DATA_DIR, 'db.json');
 
-// Middlewares
-app.use(cors());
+// Middleware
 app.use(bodyParser.json());
-app.use(express.static("public"));
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(cors({
+  origin: 'https://chatbotdplay.netlify.app', // libera apenas o frontend
+  credentials: true
+}));
 
-// ======= Funções Utilitárias =======
-function loadDB() {
+// Função para ler o DB
+function readDB() {
   if (!fs.existsSync(DB_FILE)) {
-    fs.writeFileSync(DB_FILE, JSON.stringify({ users: [], bots: [] }, null, 2));
+    fs.writeFileSync(DB_FILE, JSON.stringify({ users: [], admins: [] }, null, 2));
   }
-  return JSON.parse(fs.readFileSync(DB_FILE, "utf-8"));
+  const data = fs.readFileSync(DB_FILE);
+  return JSON.parse(data);
 }
 
+// Função para salvar o DB
 function saveDB(db) {
   fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2));
 }
 
-function generateToken(user) {
-  return jwt.sign({ id: user.id, role: user.role }, SECRET, { expiresIn: "7d" });
-}
+// ------------------------- ROTAS -------------------------
 
-function authMiddleware(req, res, next) {
-  const token = req.headers.authorization?.split(" ")[1];
-  if (!token) return res.status(401).json({ error: "Token ausente" });
+// Login usuário normal
+app.post('/api/login', (req, res) => {
+  const { email, password } = req.body;
+  const db = readDB();
+  const user = db.users.find(u => u.email === email && u.password === password);
+
+  if (!user) return res.status(401).json({ error: 'Usuário ou senha inválidos' });
+
+  const token = jwt.sign({ email: user.email }, 'SECRET_KEY', { expiresIn: '1d' });
+  res.json({ success: true, token, user });
+});
+
+// Login admin
+app.post('/api/admin/login', (req, res) => {
+  const { email, password } = req.body;
+  const db = readDB();
+  const admin = db.admins.find(a => a.email === email && a.password === password);
+
+  if (!admin) return res.status(401).json({ error: 'Admin ou senha inválidos' });
+
+  const token = jwt.sign({ email: admin.email, admin: true }, 'SECRET_KEY', { expiresIn: '1d' });
+  res.json({ success: true, token, admin });
+});
+
+// Dados do usuário logado
+app.get('/api/account', (req, res) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) return res.status(401).json({ error: 'Token não fornecido' });
 
   try {
-    req.user = jwt.verify(token, SECRET);
-    next();
-  } catch {
-    res.status(403).json({ error: "Token inválido" });
+    const decoded = jwt.verify(token, 'SECRET_KEY');
+    res.json({ success: true, user: decoded });
+  } catch (err) {
+    res.status(401).json({ error: 'Token inválido' });
   }
-}
-
-function adminMiddleware(req, res, next) {
-  if (req.user.role !== "admin") return res.status(403).json({ error: "Acesso negado" });
-  next();
-}
-
-// ======= ROTAS DE AUTENTICAÇÃO =======
-app.post("/api/register", (req, res) => {
-  const db = loadDB();
-  const { name, email, password } = req.body;
-
-  if (db.users.find((u) => u.email === email)) {
-    return res.status(400).json({ error: "E-mail já cadastrado" });
-  }
-
-  const newUser = {
-    id: Date.now(),
-    name,
-    email,
-    password,
-    role: "user",
-    status: "active",
-    createdAt: new Date().toISOString(),
-  };
-
-  db.users.push(newUser);
-  saveDB(db);
-
-  res.json({ message: "Conta criada com sucesso!" });
 });
 
-app.post("/api/login", (req, res) => {
-  const db = loadDB();
-  const { email, password } = req.body;
-  const user = db.users.find((u) => u.email === email && u.password === password);
-
-  if (!user) return res.status(401).json({ error: "Credenciais inválidas" });
-  if (user.status === "banned") return res.status(403).json({ error: "Conta banida" });
-
-  const token = generateToken(user);
-  res.json({ token, role: user.role, name: user.name });
+// --------------------- START ---------------------
+app.listen(PORT, () => {
+  console.log(`Backend rodando em http://localhost:${PORT}`);
 });
-
-app.post("/api/admin/login", (req, res) => {
-  const db = loadDB();
-  const { email, password } = req.body;
-  const admin = db.users.find((u) => u.email === email && u.password === password && u.role === "admin");
-
-  if (!admin) return res.status(401).json({ error: "Credenciais inválidas" });
-
-  const token = generateToken(admin);
-  res.json({ token, role: admin.role, name: admin.name });
-});
-
-// ======= ROTAS DE USUÁRIO =======
-app.get("/api/account", authMiddleware, (req, res) => {
-  const db = loadDB();
-  const user = db.users.find((u) => u.id === req.user.id);
-  if (!user) return res.status(404).json({ error: "Usuário não encontrado" });
-  res.json(user);
-});
-
-// ======= ROTAS ADMIN =======
-app.get("/api/admin/users", authMiddleware, adminMiddleware, (req, res) => {
-  const db = loadDB();
-  res.json(db.users);
-});
-
-app.post("/api/admin/ban/:id", authMiddleware, adminMiddleware, (req, res) => {
-  const db = loadDB();
-  const user = db.users.find((u) => u.id == req.params.id);
-  if (!user) return res.status(404).json({ error: "Usuário não encontrado" });
-  user.status = "banned";
-  saveDB(db);
-  res.json({ message: `${user.name} foi banido.` });
-});
-
-app.post("/api/admin/unban/:id", authMiddleware, adminMiddleware, (req, res) => {
-  const db = loadDB();
-  const user = db.users.find((u) => u.id == req.params.id);
-  if (!user) return res.status(404).json({ error: "Usuário não encontrado" });
-  user.status = "active";
-  saveDB(db);
-  res.json({ message: `${user.name} foi reativado.` });
-});
-
-// ======= TESTE DE STATUS =======
-app.get("/", (req, res) => {
-  res.send("✅ DPLAY BOT SERVER rodando com sucesso!");
-});
-
-// ======= INICIALIZAÇÃO =======
-app.listen(PORT, () => console.log(`🚀 Servidor rodando na porta ${PORT}`));
