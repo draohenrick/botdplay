@@ -20,30 +20,43 @@ const connectToDatabase = async () => {
     }
 };
 
-// --- Funções de busca de dados ---
+// --- Funções de Usuários ---
 const getUserByEmail = async (email) => await db.collection('users').findOne({ email });
-const getUserById = async (id) => await db.collection('users').findOne({ _id: new ObjectId(id) });
 const addUser = async (userData) => {
     const result = await db.collection('users').insertOne(userData);
-    return result.insertedId;
+    return result; // Retorna o resultado completo, que inclui o insertedId
 };
 
-// NOVAS FUNÇÕES
-const getInstances = async (userId) => await db.collection('instances').find({ ownerId: userId }).toArray();
-const getLeads = async (userId) => await db.collection('leads').find({ ownerId: userId }).toArray();
-const getServices = async (userId) => await db.collection('services').find({ ownerId: userId }).toArray();
-const getConversations = async (userId) => await db.collection('conversations').find({ ownerId: userId }).toArray();
-const getUsersList = async () => await db.collection('users').find({}, { projection: { password: 0 } }).toArray(); // Retorna usuários sem a senha
+// --- Funções de Instâncias (NOVAS) ---
+const addInstance = async (instanceData) => {
+    return await db.collection('instances').insertOne(instanceData);
+};
+
+const updateInstance = async (instanceId, updates) => {
+    if (!ObjectId.isValid(instanceId)) return null;
+    return await db.collection('instances').updateOne(
+        { _id: new ObjectId(instanceId) },
+        { $set: updates }
+    );
+};
+
+const getInstanceById = async (instanceId) => {
+    if (!ObjectId.isValid(instanceId)) return null;
+    return await db.collection('instances').findOne({ _id: new ObjectId(instanceId) });
+};
+
+const getInstancesByOwner = async (ownerId) => {
+    return await db.collection('instances').find({ ownerId: ownerId }).toArray();
+}
 
 
+// Exporta todas as funções que usamos no projeto
 module.exports = {
     connectToDatabase,
     getUserByEmail,
-    getUserById,
     addUser,
-    getInstances,
-    getLeads,
-    getServices,
-    getConversations,
-    getUsersList,
+    addInstance,
+    updateInstance,
+    getInstanceById,
+    getInstancesByOwner
 };
