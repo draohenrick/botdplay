@@ -4,14 +4,9 @@
     <meta charset="UTF-8">
     <title>Dplay Bot - Home</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-
-    <!-- Bootstrap -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-
-    <script>
-      const BACKEND_URL = 'https://botdplay.onrender.com';
-    </script>
+    <script>const BACKEND_URL = 'https://botdplay.onrender.com';</script>
 </head>
 <body>
 <div class="container-fluid">
@@ -74,7 +69,6 @@
 </div>
 
 <script>
-    // Usuário login
     const userForm = document.getElementById('userLoginForm');
     userForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -84,8 +78,8 @@
         try {
             const res = await fetch(`${BACKEND_URL}/api/login`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password })
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({email, password})
             });
             const data = await res.json();
             if (data.success) {
@@ -99,7 +93,6 @@
         }
     });
 
-    // Admin login
     const adminForm = document.getElementById('adminLoginForm');
     adminForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -109,8 +102,8 @@
         try {
             const res = await fetch(`${BACKEND_URL}/api/admin/login`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password })
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({email, password})
             });
             const data = await res.json();
             if (data.success) {
