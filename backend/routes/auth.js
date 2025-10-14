@@ -10,11 +10,11 @@ const usuarios = [
   {
     id: 1,
     nome: 'Drão Henrick',
-    email: 'admin@dplay.com',
+    email: 'mktdplay@gmai.com',
     empresa: 'Dplay Bot',
-    senha: bcrypt.hashSync('123456', 10),
+    senha: bcrypt.hashSync('123456789dplay', 10),
     role: 'admin',
-    whatsapp: '+55 11 99999-9999',
+    whatsapp: '+55 11 99000-8582',
     codigo: 'ADM-0001',
     bots: [
       { id: 1, name: 'Bot Atendimento', status: 'Online' },
