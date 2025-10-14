@@ -1,7 +1,7 @@
 {
   "name": "botdplay-backend",
   "version": "1.0.0",
-  "description": "Backend para Dplay Bot SaaS",
+  "description": "Backend completo Dplay Bot SaaS",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
