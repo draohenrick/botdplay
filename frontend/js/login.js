@@ -1,77 +1,42 @@
+// A URL do seu backend no Render
 const BACKEND_URL = 'https://botdplay.onrender.com';
 
+// --- Elementos do Formulário ---
 const loginForm = document.getElementById('login-form');
 const emailInput = document.getElementById('email-input');
 const passwordInput = document.getElementById('password-input');
-const errorMessage = document.getElementById('error-message');
+const errorMessage = document.getElementById('error-message'); // Um <p> para erros
 
-async function handleLogin(event) {
-  event.preventDefault();
+// --- Lógica do Login ---
+loginForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    errorMessage.textContent = '';
 
-  const email = emailInput.value.trim();
-  const senha = passwordInput.value.trim();
+    const email = emailInput.value;
+    const password = passwordInput.value;
 
-  if (!email || !senha) {
-    showError('Por favor, preencha todos os campos.');
-    return;
-  }
+    try {
+        // CORREÇÃO: A URL foi ajustada para o caminho correto da API
+        const response = await fetch(`${BACKEND_URL}/api/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password }),
+        });
 
-  try {
-    const response = await fetch(`${BACKEND_URL}/login`, { // Ajuste de rota
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, senha }), // Ajuste para o back-end
-    });
+        const data = await response.json();
 
-    let data;
-    const contentType = response.headers.get("content-type");
-    if (contentType && contentType.includes("application/json")) {
-      data = await response.json();
-    } else {
-      const text = await response.text();
-      console.error('Resposta inesperada do servidor:', text);
-      showError('Erro de comunicação com o servidor.');
-      return;
-    }
+        if (!response.ok) {
+            errorMessage.textContent = data.error || 'Falha no login.';
+            return;
+        }
 
-    if (response.ok) {
-      localStorage.setItem('authToken', data.token);
-      localStorage.setItem('userEmail', email);
+        // SUCESSO: Salva o token no localStorage
+        localStorage.setItem('authToken', data.token);
 
-      if (data.role && data.role === 'admin') {
-        window.location.href = '/admin-dashboard.html';
-      } else {
+        // Redireciona para a página principal do site
         window.location.href = '/index.html';
-      }
-    } else {
-      showError(data.error || '❌ Usuário ou senha inválidos.');
-      console.error('Erro retornado pelo backend:', data);
+
+    } catch (error) {
+        errorMessage.textContent = 'Erro de conexão com o servidor.';
     }
-
-  } catch (error) {
-    console.error('Erro no login:', error);
-    showError('Não foi possível conectar ao servidor.');
-  }
-}
-
-function showError(msg) {
-  if (errorMessage) {
-    errorMessage.textContent = msg;
-    errorMessage.style.display = 'block';
-  } else {
-    alert(msg);
-  }
-}
-
-function checkExistingSession() {
-  const token = localStorage.getItem('authToken');
-  if (token) {
-    window.location.href = '/index.html';
-  }
-}
-
-if (loginForm) {
-  loginForm.addEventListener('submit', handleLogin);
-}
-
-checkExistingSession();
+});
