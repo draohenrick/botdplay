@@ -1,40 +1,21 @@
+// server.js
 const express = require('express');
-const bodyParser = require('body-parser');
 const cors = require('cors');
-const path = require('path');
-
 const app = express();
-const PORT = process.env.PORT || 3000;
-
-// Middlewares
-app.use(cors());
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-
-// Rotas
-const authRouter = require('./routes/auth');
-const accountRouter = require('./routes/account');
 const usersRouter = require('./routes/users');
 
-app.use('/api/auth', authRouter);
-app.use('/api/account', accountRouter);
-app.use('/api/users', usersRouter);
+// Middleware
+app.use(express.json());
+app.use(cors({
+  origin: 'https://chatbotdplay.netlify.app', // seu front-end
+  credentials: true
+}));
 
-// Endpoint raiz
-app.get('/', (req, res) => {
-  res.send('Backend Dplay Bot está rodando!');
-});
+// Rotas
+app.use('/users', usersRouter);
 
-// Catch-all para páginas estáticas (se houver frontend)
-app.use(express.static(path.join(__dirname, 'public')));
+// Health check
+app.get('/', (req, res) => res.send('API do Dplay Bot funcionando!'));
 
-// Error handler básico
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ error: 'Erro interno do servidor' });
-});
-
-// Start server
-app.listen(PORT, () => {
-  console.log(`Servidor rodando na porta ${PORT}`);
-});
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
