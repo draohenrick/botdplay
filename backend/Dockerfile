@@ -1,23 +1,22 @@
-# Use a imagem oficial do Node.js LTS
-FROM node:18
+# Dockerfile
 
-# Define o diretório de trabalho dentro do container
+# 1. Imagem base oficial do Node.js
+FROM node:18-alpine
+
+# 2. Diretório de trabalho dentro do container
 WORKDIR /usr/src/app
 
-# Copia package.json e package-lock.json para instalar dependências
+# 3. Copia os arquivos de dependências
 COPY package*.json ./
 
-# Instala as dependências do projeto
-RUN npm install --production
+# 4. Instala dependências
+RUN npm install
 
-# Copia todo o restante do projeto para dentro do container
+# 5. Copia todo o restante do projeto para dentro do container
 COPY . .
 
-# Exponha a porta que o app vai rodar
+# 6. Expõe a porta que a aplicação irá rodar
 EXPOSE 3000
 
-# Variável de ambiente para produção
-ENV NODE_ENV=production
-
-# Comando para iniciar a aplicação
+# 7. Comando para iniciar o servidor
 CMD ["node", "server.js"]
