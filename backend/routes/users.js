@@ -2,34 +2,36 @@
 const express = require('express');
 const router = express.Router();
 
-// Controladores simulados
-// Se você tiver controllers separados, substitua essas funções pelos imports corretos
-const getUsers = (req, res) => {
-    res.json({ message: 'Lista de usuários retornada com sucesso!' });
-};
+// Mock banco de dados em memória
+let users = [];
 
-const registerUser = (req, res) => {
+// Listar usuários
+router.get('/', (req, res) => {
+    res.json({ message: 'Lista de usuários retornada com sucesso!', users });
+});
+
+// Registrar usuário
+router.post('/register', (req, res) => {
     const { name, email } = req.body;
-    if (!name || !email) {
-        return res.status(400).json({ error: 'Nome e email são obrigatórios' });
-    }
-    // Aqui você adicionaria a lógica de salvar no banco
-    res.json({ message: 'Usuário registrado com sucesso!', user: { name, email } });
-};
+    if (!name || !email) return res.status(400).json({ error: 'Nome e email são obrigatórios' });
 
-const loginUser = (req, res) => {
+    const exists = users.find(u => u.email === email);
+    if (exists) return res.status(400).json({ error: 'Email já cadastrado' });
+
+    const newUser = { id: users.length + 1, name, email };
+    users.push(newUser);
+    res.json({ message: 'Usuário registrado com sucesso!', user: newUser });
+});
+
+// Login
+router.post('/login', (req, res) => {
     const { email } = req.body;
-    if (!email) {
-        return res.status(400).json({ error: 'Email é obrigatório' });
-    }
-    // Aqui você adicionaria validação real de login
-    res.json({ message: `Usuário ${email} logado com sucesso!` });
-};
+    if (!email) return res.status(400).json({ error: 'Email é obrigatório' });
 
-// Rotas
-router.get('/', getUsers); // Lista usuários
-router.post('/register', registerUser); // Registro
-router.post('/login', loginUser); // Login
+    const user = users.find(u => u.email === email);
+    if (!user) return res.status(404).json({ error: 'Usuário não encontrado' });
 
-// Exporta o router
+    res.json({ message: `Usuário ${email} logado com sucesso!`, user });
+});
+
 module.exports = router;
