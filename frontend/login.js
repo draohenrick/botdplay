@@ -1,4 +1,3 @@
-// A URL do seu backend no Render
 const BACKEND_URL = 'https://botdplay.onrender.com';
 
 const loginForm = document.getElementById('login-form');
@@ -8,7 +7,7 @@ const errorMessage = document.getElementById('error-message');
 
 loginForm.addEventListener('submit', async (event) => {
     event.preventDefault();
-    errorMessage.textContent = ''; // Limpa mensagens de erro antigas
+    errorMessage.textContent = '';
 
     const email = emailInput.value;
     const password = passwordInput.value;
@@ -27,10 +26,7 @@ loginForm.addEventListener('submit', async (event) => {
             return;
         }
 
-        // SUCESSO! Salva o token no localStorage
         localStorage.setItem('authToken', data.token);
-
-        // Redireciona para o dashboard
         window.location.href = '/dashboard.html';
 
     } catch (error) {
