@@ -1,34 +1,41 @@
 const express = require('express');
-const cors = require('cors');
-const mongoose = require('mongoose');
 const http = require('http');
-const { Server } = require('socket.io');
+const cors = require('cors'); // <-- 1. GARANTA QUE ESTA LINHA EXISTE
+const bodyParser = require('body-parser');
 
-const usersRouter = require('./routes/users');
-const botsRouter = require('./routes/bots');
+const db = require('./db');
+const authMiddleware = require('./middleware/authMiddleware');
+const authRoutes = require('./routes/auth');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: 'https://chatbotdplay.netlify.app', credentials: true } });
+const PORT = process.env.PORT || 3001;
 
-// MongoDB
-mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/dplay', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
+app.use(cors()); // <-- 2. GARANTA QUE ESTA LINHA EXISTE E VEM ANTES DAS ROTAS
+app.use(bodyParser.json());
+
+// --- ROTAS ---
+app.use('/api/auth', authRoutes);
+
+app.use(authMiddleware);
+
+// --- ROTAS PROTEGIDAS ---
+// (Suas outras rotas protegidas virão aqui)
+app.get('/api/dashboard-data', (req, res) => {
+    res.json({ message: `Bem-vindo, ${req.user.nome}!` });
 });
 
-// Middleware
-app.use(cors({ origin: 'https://chatbotdplay.netlify.app', credentials: true }));
-app.use(express.json());
+// --- INICIALIZAÇÃO DO SERVIDOR ---
+const startServer = async () => {
+    try {
+        await db.connectToDatabase();
+        server.listen(PORT, () => {
+            console.log(`🚀 Servidor rodando na porta ${PORT}`);
+        });
+    } catch (error) {
+        console.error("❌ Falha crítica ao iniciar o servidor:", error);
+        process.exit(1);
+    }
+};
 
-// Rotas
-app.use('/users', usersRouter);
-app.use('/bots', botsRouter);
-
-// WebSocket
-io.on('connection', socket => {
-  socket.on('join', userId => socket.join(userId));
-});
-
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
+startServer();
