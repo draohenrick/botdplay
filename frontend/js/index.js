@@ -1,61 +1,68 @@
-// A URL do seu backend no Render
+// URL do backend
 const BACKEND_URL = 'https://botdplay.onrender.com';
 
-// --- Elementos da Página ---
-const welcomeMessage = document.getElementById('welcome-message');
-const dataContainer = document.getElementById('data-container');
-const logoutButton = document.getElementById('logout-button');
+// Elementos da página
+const summaryContainer = document.getElementById('summary');
+const logoutLinks = document.querySelectorAll('[onclick="logout()"]'); // todos links de logout
 
-// --- Lógica de Proteção e Carregamento de Dados ---
-async function loadIndexPage() {
-    // 1. Pega o token salvo no localStorage
+// Função para proteger página
+function protectPage() {
     const token = localStorage.getItem('authToken');
-
     if (!token) {
-        // Se NÃO houver token, o usuário não está logado.
-        alert('Acesso negado. Por favor, faça login para continuar.');
-        window.location.href = '/login.html'; // Redireciona para o login
-        return;
+        alert('Acesso negado. Faça login para continuar.');
+        window.location.href = '/login.html';
     }
+}
 
-    // Se houver token, busca os dados protegidos no backend
+// Função para carregar os dados do dashboard
+async function loadDashboard() {
+    const token = localStorage.getItem('authToken');
+    if (!token) return;
+
     try {
         const response = await fetch(`${BACKEND_URL}/api/dashboard-data`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
-                // Envia o token para provar que estamos autenticados
                 'Authorization': `Bearer ${token}`
             }
         });
 
         if (response.status === 401 || response.status === 403) {
-            // Se o token for inválido ou expirado, o backend retornará um erro
-            localStorage.removeItem('authToken'); // Limpa o token ruim
-            alert('Sua sessão expirou. Por favor, faça login novamente.');
+            localStorage.removeItem('authToken');
+            alert('Sua sessão expirou. Faça login novamente.');
             window.location.href = '/login.html';
             return;
         }
 
         const data = await response.json();
 
-        // Mostra os dados na tela
-        if (welcomeMessage) welcomeMessage.textContent = data.message;
-        if (dataContainer) dataContainer.textContent = JSON.stringify(data.bots, null, 2);
+        // Exibe os dados no container
+        if (summaryContainer) {
+            summaryContainer.innerHTML = `
+                <strong>Bem-vindo, ${data.userName || 'usuário'}!</strong><br>
+                Total de Bots: ${data.totalBots || 0}<br>
+                Conexões Ativas: ${data.activeConnections || 0}<br>
+                Leads Capturados: ${data.leadsCount || 0}
+            `;
+        }
 
     } catch (error) {
-        if (dataContainer) dataContainer.textContent = 'Erro ao carregar os dados do servidor.';
+        if (summaryContainer) summaryContainer.textContent = 'Erro ao carregar os dados do servidor.';
+        console.error('Erro ao buscar dados do dashboard:', error);
     }
 }
 
-// --- Lógica do Botão de Logout ---
-logoutButton.addEventListener('click', () => {
-    // Limpa o token e redireciona para o login
+// Função de logout
+function logout() {
     localStorage.removeItem('authToken');
     alert('Você saiu com sucesso.');
     window.location.href = '/login.html';
-});
+}
 
+// Associa logout a todos os links com onclick="logout()"
+logoutLinks.forEach(link => link.addEventListener('click', logout));
 
-// Roda a função principal assim que a página carrega
-loadIndexPage();
+// Executa proteção e carregamento de dados ao abrir a página
+protectPage();
+loadDashboard();
