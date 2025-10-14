@@ -3,6 +3,7 @@ const router = express.Router();
 const jwt = require('jsonwebtoken');
 
 const SECRET = process.env.JWT_SECRET || 'dplaysecret';
+const usuarios = require('./auth').usuarios;
 
 // Middleware de autenticação
 function authenticateToken(req, res, next) {
@@ -16,9 +17,6 @@ function authenticateToken(req, res, next) {
     next();
   });
 }
-
-// Compartilha mesmo array do auth.js
-const usuarios = require('./auth').usuarios;
 
 // GET /api/account
 router.get('/', authenticateToken, (req, res) => {
