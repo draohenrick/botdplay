@@ -3,7 +3,7 @@ const http = require('http');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 
-const db = require('./db'); 
+const db = require('./db');
 const authMiddleware = require('./middleware/authMiddleware');
 const authRoutes = require('./routes/auth');
 
@@ -14,30 +14,104 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(bodyParser.json());
 
-// --- ROTAS ---
-app.use('/api/auth', authRoutes); // Rotas públicas (login/registro)
+// --- ROTAS PÚBLICAS ---
+app.use('/api/auth', authRoutes);
 
-app.use(authMiddleware); // IMPORTANTE: Tudo abaixo desta linha é protegido e exige login
+// --- PROTEÇÃO ---
+// Tudo abaixo desta linha exige um token de autenticação válido
+app.use(authMiddleware);
 
-// Rota de exemplo protegida para o dashboard testar
-app.get('/api/data', async (req, res) => {
-    // Graças ao authMiddleware, temos acesso a req.user com os dados do token
+// --- ROTAS PROTEGIDAS ---
+
+// Rota para a página principal (index.html/dashboard.html)
+app.get('/api/dashboard-data', async (req, res) => {
     res.json({
-        message: `Bem-vindo, ${req.user.nome}!`,
-        userId: req.user.id,
-        userEmail: req.user.email,
-        data: [
-            { id: 1, info: "Esta é uma informação protegida." },
-            { id: 2, info: "Apenas usuários logados podem ver isso." }
+        message: `Bem-vindo ao seu painel, ${req.user.nome}!`,
+        bots: [
+            { id: 1, name: "Bot Atendimento", status: "Online" },
+            { id: 2, name: "Bot Vendas", status: "Offline" }
         ]
     });
+});
+
+// Rota para a página de conta (account.html)
+app.get('/api/account', async (req, res) => {
+    try {
+        // O ID do usuário vem do token que o authMiddleware decodificou
+        const user = await db.getUserById(req.user.id);
+        if (!user) {
+            return res.status(404).json({ error: 'Usuário não encontrado.' });
+        }
+        // Remove a senha antes de enviar os dados do usuário
+        delete user.password;
+        res.json(user);
+    } catch (error) {
+        console.error("Erro ao buscar dados da conta:", error);
+        res.status(500).json({ error: "Erro interno do servidor." });
+    }
+});
+
+// Rota para a página de instâncias (instances.html)
+app.get('/api/instances', async (req, res) => {
+    try {
+        const instances = await db.getInstances(req.user.id);
+        res.json(instances);
+    } catch (error) {
+        console.error("Erro ao buscar instâncias:", error);
+        res.status(500).json({ error: "Erro interno do servidor." });
+    }
+});
+
+// Rota para a página de leads (leads.html)
+app.get('/api/leads', async (req, res) => {
+    try {
+        const leads = await db.getLeads(req.user.id);
+        res.json(leads);
+    } catch (error) {
+        console.error("Erro ao buscar leads:", error);
+        res.status(500).json({ error: "Erro interno do servidor." });
+    }
+});
+
+// Rota para a página de conversas (conversations.html)
+app.get('/api/conversations', async (req, res) => {
+    try {
+        const conversations = await db.getConversations(req.user.id);
+        res.json(conversations);
+    } catch (error) {
+        console.error("Erro ao buscar conversas:", error);
+        res.status(500).json({ error: "Erro interno do servidor." });
+    }
+});
+
+// Rota para a página de serviços (services.html)
+app.get('/api/services', async (req, res) => {
+    try {
+        const services = await db.getServices(req.user.id);
+        res.json(services);
+    } catch (error) {
+        console.error("Erro ao buscar serviços:", error);
+        res.status(500).json({ error: "Erro interno do servidor." });
+    }
+});
+
+// Rota para a página de usuários (usuarios.html)
+app.get('/api/users', async (req, res) => {
+    try {
+        // Aqui você pode adicionar uma lógica para verificar se o req.user é um admin
+        const users = await db.getUsersList();
+        res.json(users);
+    } catch (error) {
+        console.error("Erro ao buscar lista de usuários:", error);
+        res.status(500).json({ error: "Erro interno do servidor." });
+    }
 });
 
 
 // --- INICIALIZAÇÃO DO SERVIDOR ---
 const startServer = async () => {
     try {
-        await db.connectToDatabase(); 
+        await db.connectToDatabase();
         server.listen(PORT, () => {
             console.log(`🚀 Servidor rodando na porta ${PORT}`);
         });
