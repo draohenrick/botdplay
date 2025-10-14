@@ -1,9 +1,28 @@
-# Ignorar dependências do Node
-backend/node_modules/
+# Node
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
 
-# Ignorar sessões locais e de produção do WhatsApp
-backend/.wwebjs_auth/
-backend/data/wwebjs_auth/
+# Logs
+logs/
+*.log
 
-# Arquivos de ambiente
-backend/.env
+# Build
+dist/
+build/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# OS
+.DS_Store
+Thumbs.db
