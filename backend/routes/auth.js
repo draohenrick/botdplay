@@ -5,7 +5,7 @@ const bcrypt = require('bcrypt');
 
 const SECRET = process.env.JWT_SECRET || 'dplaysecret';
 
-// Banco simulado (compartilhado com account.js)
+// Banco simulado
 const usuarios = [
   {
     id: 1,
@@ -24,7 +24,7 @@ const usuarios = [
   }
 ];
 
-// 🔹 Registro
+// Registro
 router.post('/register', async (req, res) => {
   const { nome, email, telefone, senha, empresa, segmento, descricao, endereco, horario } = req.body;
 
@@ -33,9 +33,7 @@ router.post('/register', async (req, res) => {
   }
 
   const existingUser = usuarios.find(u => u.email === email);
-  if (existingUser) {
-    return res.status(409).json({ error: 'Usuário já existe.' });
-  }
+  if (existingUser) return res.status(409).json({ error: 'Usuário já existe.' });
 
   const hashedPassword = await bcrypt.hash(senha, 10);
 
@@ -60,7 +58,7 @@ router.post('/register', async (req, res) => {
   res.status(201).json({ success: true, message: 'Conta criada com sucesso!' });
 });
 
-// 🔹 Login
+// Login
 router.post('/login', async (req, res) => {
   const { email, senha } = req.body;
 
@@ -78,3 +76,4 @@ router.post('/login', async (req, res) => {
 });
 
 module.exports = router;
+module.exports.usuarios = usuarios; // exporta para account.js
