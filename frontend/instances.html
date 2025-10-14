@@ -1,265 +1,50 @@
-<!DOCTYPE html> 
-<html lang="pt-BR">
+<!DOCTYPE html>
+<html lang="pt-BR" data-bs-theme="dark">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Conexões - Dplay Bot</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link href="css/style.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
-<style>
-:root { --border-color: #dee2e6; --primary-color: #0d6efd; }
-body { font-family: 'Poppins', sans-serif; }
-
-/* Menu ativo igual ao dashboard */
-.sidebar .nav-link.active { font-weight: 600; color: var(--primary-color); background-color: transparent; }
-.sidebar .nav-link:hover { color: var(--primary-color); background-color: #e9ecef; }
-
-.qr-container {
-    padding: 1rem;
-    background-color: #ffffff;
-    border-radius: .5rem;
-    border: 1px solid var(--border-color);
-    display: inline-block;
-}
-.card-body .btn { font-weight: 500; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Conexões - Dplay Bot</title> 
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
 </head>
 <body>
-<div class="container-fluid">
-  <div class="row">
-    <!-- Sidebar -->
-    <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse">
-        <div class="position-sticky sidebar-sticky">
-            <div class="text-center my-4">
-                <img id="user-logo" src="" alt="Logo do Cliente" style="display: none; max-width: 120px; max-height: 60px;">
-                <h6 id="user-logo-text" class="sidebar-heading px-3 text-dark"><span>Dplay Bot</span></h6>
+    <div class="container-fluid">
+      <div class="row">
+        <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+            <div class="position-sticky sidebar-sticky">
+                <div class="text-center my-4">
+                    <h6 class="sidebar-heading px-3 text-dark"><span>Dplay Bot</span></h6>
+                </div>
+                <ul class="nav flex-column">
+                    <li class="nav-item"><a class="nav-link" href="index.html">Dashboard</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="instances.html">Conexões</a></li>
+                    <li class="nav-item"><a class="nav-link" href="conversations.html">Conversas</a></li>
+                    <li class="nav-item"><a class="nav-link" href="leads.html">Leads</a></li>
+                    <li class="nav-item"><a class="nav-link" href="services.html">Configurar Bot</a></li>
+                    <li class="nav-item"><a class="nav-link" href="usuarios.html">Usuários</a></li>
+                    <li class="nav-item mt-auto"><a class="nav-link" href="account.html">Minha Conta</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#" onclick="logout()">Logout</a></li>
+                </ul>
             </div>
-            <ul class="nav flex-column" style="height: calc(95% - 80px);">
-                <li class="nav-item"><a class="nav-link" href="index.html">Dashboard</a></li>
-                <li class="nav-item"><a class="nav-link active" href="instances.html">Conexões</a></li>
-                <li class="nav-item"><a class="nav-link" href="conversations.html">Conversas</a></li>
-                <li class="nav-item"><a class="nav-link" href="leads.html">Leads</a></li>
-                <li class="nav-item"><a class="nav-link" href="services.html">Configurar Bot</a></li>
-                <li class="nav-item"><a class="nav-link" href="usuarios.html">Usuários</a></li>
-                <li class="nav-item mt-auto"><a class="nav-link" href="account.html">Minha Conta</a></li>
-                <li class="nav-item"><a class="nav-link" href="#" onclick="logout()">Logout</a></li>
-            </ul>
-        </div>
-    </nav>
-
-    <!-- Main Content -->
-    <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-      <div class="page-header d-flex justify-content-between align-items-center mt-4">
-        <h1>Minhas Conexões</h1>
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addInstanceModal">+ Nova Conexão</button>
+        </nav>
+    
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+            <div class="page-header d-flex justify-content-between align-items-center my-3">
+                <h1>Conexões</h1>
+            </div>
+            
+            <p>Aqui você irá gerenciar suas conexões.</p>
+            <div id="instances-container">
+                </div>
+        </main>
       </div>
-
-      <div id="alertPlaceholder"></div>
-      <div id="instances-container" class="row mt-3">
-        <div class="col-12 text-center my-5">
-          <div class="spinner-border text-primary" role="status"></div>
-          <p class="mt-2 text-muted">Carregando conexões...</p>
-        </div>
-      </div>
-    </main>
-  </div>
-</div>
-
-<!-- Modal Nova Conexão -->
-<div class="modal fade" id="addInstanceModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Criar Nova Conexão</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form id="formAddInstance">
-                    <div class="mb-3">
-                        <label for="instanceName" class="form-label">Nome da Conexão (Ex: Bot de Vendas)</label>
-                        <input type="text" class="form-control" id="instanceName" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="humanAttendantNumber" class="form-label">Nº do Atendente (para transferir)</label>
-                        <input type="text" class="form-control" id="humanAttendantNumber" required placeholder="5531999998888">
-                    </div>
-                    <button type="submit" class="btn btn-primary w-100">Criar Conexão</button>
-                </form>
-            </div>
-        </div>
     </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
-<script src="js/auth.js"></script>
-<script>
-protectPage();
-
-const instancesContainer = document.getElementById('instances-container');
-const formAddInstance = document.getElementById('formAddInstance');
-const addInstanceModal = new bootstrap.Modal(document.getElementById('addInstanceModal'));
-let currentInstances = [];
-const socket = io(BASE_URL);
-
-// Atualização em tempo real via socket
-socket.on('status_change', data => {
-    const instance = currentInstances.find(i => i.id === data.instanceId);
-    if (instance) {
-        instance.status = data.status;
-        instance.qrCode = data.qrCode || null;
-        if (data.whatsappNumber) instance.whatsappNumber = data.whatsappNumber;
-        renderInstances(currentInstances);
-    }
-});
-
-// Carregar instâncias do backend
-async function loadInstances() {
-    instancesContainer.innerHTML = `<div class="col-12 text-center my-5">
-        <div class="spinner-border text-primary" role="status"></div>
-        <p class="mt-2 text-muted">Carregando conexões...</p>
-    </div>`;
-    try {
-        const res = await fetch(`${BASE_URL}/api/instances`);
-        if (res.status === 401 || res.status === 403) return logout();
-        const instances = await res.json();
-        renderInstances(instances);
-    } catch (e) {
-        instancesContainer.innerHTML = `<div class="col-12"><div class="alert alert-danger text-center">Não foi possível carregar as conexões.</div></div>`;
-        console.error(e);
-    }
-}
-
-// Renderizar instâncias com QR Code e botões corretos
-function renderInstances(instances) {
-    currentInstances = instances;
-    instancesContainer.innerHTML = '';
-    if (!instances.length) {
-        instancesContainer.innerHTML = '<div class="col-12"><div class="alert alert-info text-center">Nenhuma conexão criada. Clique em "+ Nova Conexão" para começar.</div></div>';
-        return;
-    }
-
-    instances.forEach(inst => {
-        const cardCol = document.createElement('div');
-        cardCol.className = 'col-md-6 col-lg-4 mb-4';
-        const status = getStatusBadge(inst.status);
-
-        const cardHeader = `
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">${inst.name}</h5>
-                <span class="badge ${status.class}">${status.text}</span>
-            </div>`;
-
-        let cardBody = '';
-        switch(inst.status) {
-            case 'online':
-                cardBody = `
-                    <div class="card-body text-center d-flex flex-column justify-content-center" style="min-height:220px;">
-                        <h6 class="text-muted">Conectado como:</h6>
-                        <p class="fs-5 fw-bold text-success">+${inst.whatsappNumber}</p>
-                        <button class="btn btn-warning w-100 mt-3" onclick="stopInstance(${inst.id}, this)">Desconectar</button>
-                    </div>`;
-                break;
-            case 'pending_qr':
-                cardBody = `
-                    <div class="card-body text-center d-flex flex-column justify-content-center" style="min-height:220px;">
-                        <p class="text-muted small">Abra seu WhatsApp e escaneie o QR Code abaixo.</p>
-                        <div class="qr-container my-2"><canvas id="qr-${inst.id}"></canvas></div>
-                        <button class="btn btn-secondary w-100 mt-2" onclick="stopInstance(${inst.id}, this)">Cancelar</button>
-                    </div>`;
-                break;
-            default:
-                cardBody = `
-                    <div class="card-body text-center d-flex flex-column justify-content-center" style="min-height:220px;">
-                        <p class="text-muted">A conexão está offline. Clique abaixo para gerar o QR Code e iniciar o bot.</p>
-                        <button class="btn btn-success w-100 mt-3" onclick="startInstance(${inst.id}, this)">Conectar WhatsApp</button>
-                    </div>`;
-        }
-
-        cardCol.innerHTML = `<div class="card h-100">${cardHeader}${cardBody}</div>`;
-        instancesContainer.appendChild(cardCol);
-
-        // Exibir QR Code se estiver pendente
-        if(inst.status === 'pending_qr' && inst.qrCode) {
-            setTimeout(() => {
-                const canvas = document.getElementById(`qr-${inst.id}`);
-                if(canvas) QRCode.toCanvas(canvas, inst.qrCode, { width: 180 }, err => { if(err) console.error(err); });
-            }, 100);
-        }
-    });
-}
-
-function getStatusBadge(status) {
-    const statuses = {
-        online: { class:'bg-success', text:'Online' },
-        offline: { class:'bg-secondary', text:'Offline' },
-        pending_qr: { class:'bg-warning text-dark', text:'Aguardando QR' },
-        error: { class:'bg-danger', text:'Erro' },
-        connecting: { class:'bg-info text-dark', text:'Conectando...' }
-    };
-    return statuses[status] || { class:'bg-dark', text:'Desconhecido' };
-}
-
-// Start/Stop instância com QR Code e feedback visual robusto
-async function startInstance(id, btn) {
-    btn.disabled = true;
-    btn.innerHTML = `<span class="spinner-border spinner-border-sm"></span> Conectando...`;
-    try {
-        const res = await fetch(`${BASE_URL}/api/instances/${id}/start`, { method:'POST' });
-        if(!res.ok) throw new Error('Falha ao iniciar a instância.');
-        showAlert('Conexão iniciada! Aguarde o QR Code aparecer.', 'success');
-        loadInstances();
-    } catch(e) {
-        console.error(e);
-        btn.disabled = false;
-        btn.innerHTML = 'Conectar WhatsApp';
-        showAlert('Erro ao conectar. Tente novamente.', 'danger');
-    }
-}
-
-async function stopInstance(id, btn) {
-    btn.disabled = true;
-    btn.innerHTML = `<span class="spinner-border spinner-border-sm"></span> Desconectando...`;
-    try {
-        const res = await fetch(`${BASE_URL}/api/instances/${id}/stop`, { method:'POST' });
-        if(!res.ok) throw new Error('Falha ao desconectar a instância.');
-        showAlert('Conexão desconectada com sucesso!', 'success');
-        loadInstances();
-    } catch(e) {
-        console.error(e);
-        btn.disabled = false;
-        btn.innerHTML = 'Desconectar';
-        showAlert('Erro ao desconectar. Tente novamente.', 'danger');
-    }
-}
-
-// Criar nova instância
-formAddInstance.addEventListener('submit', async e => {
-    e.preventDefault();
-    const name = document.getElementById('instanceName').value;
-    const humanAttendantNumber = document.getElementById('humanAttendantNumber').value;
-    try {
-        const res = await fetch(`${BASE_URL}/api/instances`, { 
-            method:'POST', 
-            headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({ name, humanAttendantNumber }) 
-        });
-        if(!res.ok) throw new Error('Falha ao criar conexão.');
-        showAlert('Conexão criada! Clique em "Conectar WhatsApp" para gerar o QR Code.', 'success');
-        addInstanceModal.hide();
-        formAddInstance.reset();
-        loadInstances();
-    } catch(error) {
-        showAlert(error.message, 'danger');
-    }
-});
-
-window.addEventListener('DOMContentLoaded', () => {
-    loadUserData();
-    loadInstances();
-});
-</script>
+    
+    <script src="js/auth.js"></script>
+    <script src="js/instances.js"></script>
+    <script>
+        protectPage();
+    </script>
 </body>
 </html>
