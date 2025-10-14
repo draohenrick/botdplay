@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin - Dplay Bot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script>const BACKEND_URL = 'https://botdplay.onrender.com';</script>
+</head>
+<body>
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <nav class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
+            <div class="position-sticky pt-3">
+                <ul class="nav flex-column">
+                    <li class="nav-item"><a class="nav-link" href="index.html">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="account.html">Minha Conta</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="admin.html">Admin</a></li>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- Main -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+            <h1 class="mt-4">Área Admin</h1>
+            <div id="adminData" class="mt-4"></div>
+            <button id="logoutAdminBtn" class="btn btn-danger mt-3">Sair</button>
+        </main>
+    </div>
+</div>
+
+<script>
+async function loadAdmin() {
+    const token = localStorage.getItem('adminToken');
+    if (!token) return window.location.href = 'index.html';
+
+    try {
+        const res = await fetch(`${BACKEND_URL}/api/account`, {
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (data.success && data.user.admin) {
+            const html = `
+                <p><strong>Email Admin:</strong> ${data.user.email}</p>
+                <p><strong>Área restrita:</strong> Sim</p>
+            `;
+            document.getElementById('adminData').innerHTML = html;
+        } else {
+            localStorage.removeItem('adminToken');
+            window.location.href = 'index.html';
+        }
+    } catch {
+        document.getElementById('adminData').innerText = 'Erro de conexão com o backend';
+    }
+}
+
+document.getElementById('logoutAdminBtn').addEventListener('click', () => {
+    localStorage.removeItem('adminToken');
+    window.location.href = 'index.html';
+});
+
+loadAdmin();
+</script>
+</body>
+</html>
