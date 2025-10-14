@@ -1,47 +1,41 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { io } from 'socket.io-client';
+import Dashboard from './components/Dashboard';
 
-const API_URL = 'https://botdplay.onrender.com/users'; // back-end Render
+const API_URL = 'https://botdplay.onrender.com';
+const socket = io(API_URL);
 
 function App() {
+  const [userId, setUserId] = useState('');
   const [email, setEmail] = useState('');
-  const [name, setName] = useState('');
-  const [message, setMessage] = useState('');
+  const [password, setPassword] = useState('');
+
+  const [logged, setLogged] = useState(false);
 
   const register = async () => {
-    try {
-      const res = await axios.post(`${API_URL}/register`, { name, email });
-      setMessage(res.data.message);
-    } catch (err) {
-      setMessage(err.response?.data.error || 'Erro no cadastro');
-    }
+    const res = await axios.post(`${API_URL}/users/register`, { name: 'Cliente', email, password });
+    setUserId(res.data.userId);
+    setLogged(true);
   };
 
   const login = async () => {
-    try {
-      const res = await axios.post(`${API_URL}/login`, { email });
-      setMessage(res.data.message);
-    } catch (err) {
-      setMessage(err.response?.data.error || 'Erro no login');
-    }
+    const res = await axios.post(`${API_URL}/users/login`, { email, password });
+    setUserId(res.data.userId);
+    setLogged(true);
   };
 
-  return (
-    <div style={{ padding: 20 }}>
-      <h1>Dplay ChatBot SaaS</h1>
-
-      <h2>Registrar</h2>
-      <input placeholder="Nome" value={name} onChange={e => setName(e.target.value)} />
+  if (!logged) return (
+    <div>
+      <h1>Dplay Bot SaaS</h1>
       <input placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
+      <input placeholder="Senha" type="password" value={password} onChange={e => setPassword(e.target.value)} />
       <button onClick={register}>Registrar</button>
-
-      <h2>Login</h2>
-      <input placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
       <button onClick={login}>Login</button>
-
-      <p>{message}</p>
     </div>
   );
+
+  return <Dashboard userId={userId} apiUrl={API_URL} socket={socket} />;
 }
 
 export default App;
