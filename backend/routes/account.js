@@ -1,54 +1,31 @@
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
+const User = require('../models/User');
+const { authUser } = require('../middleware/auth');
 
-const SECRET = process.env.JWT_SECRET || 'dplaysecret';
-const usuarios = require('./auth').usuarios;
-
-// Middleware de autenticação
-function authenticateToken(req, res, next) {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
-  if (!token) return res.status(401).json({ message: 'Token ausente.' });
-
-  jwt.verify(token, SECRET, (err, user) => {
-    if (err) return res.status(403).json({ message: 'Token inválido ou expirado.' });
-    req.user = user;
-    next();
-  });
-}
-
-// GET /api/account
-router.get('/', authenticateToken, (req, res) => {
-  const userEmail = req.user.email;
-  const user = usuarios.find(u => u.email === userEmail);
-  if (!user) return res.status(404).json({ message: 'Usuário não encontrado.' });
-
-  res.json({
-    id: user.id,
-    nome: user.nome,
-    email: user.email,
-    empresa: user.empresa,
-    whatsapp: user.whatsapp,
-    codigo: user.codigo,
-    role: user.role,
-    bots: user.bots,
-    leads: user.leads
-  });
+// Obter dados do usuário
+router.get('/', authUser, (req, res) => {
+    res.json({success:true, user:req.user});
 });
 
-// PUT /api/account
-router.put('/', authenticateToken, (req, res) => {
-  const userEmail = req.user.email;
-  const user = usuarios.find(u => u.email === userEmail);
-  if (!user) return res.status(404).json({ message: 'Usuário não encontrado.' });
+// Atualizar perfil
+router.put('/', authUser, async (req, res) => {
+    const { name } = req.body;
+    req.user.name = name || req.user.name;
+    await req.user.save();
+    res.json({success:true, user:req.user});
+});
 
-  const { nome, empresa, whatsapp } = req.body;
-  if (nome) user.nome = nome;
-  if (empresa) user.empresa = empresa;
-  if (whatsapp) user.whatsapp = whatsapp;
-
-  res.json({ message: 'Dados atualizados com sucesso.', user });
+// Alterar senha
+router.put('/password', authUser, async (req,res) => {
+    const { currentPassword, newPassword } = req.body;
+    const match = await bcrypt.compare(currentPassword, req.user.password);
+    if(!match) return res.status(400).json({success:false,message:'Senha atual incorreta'});
+    req.user.password = await bcrypt.hash(newPassword,10);
+    await req.user.save();
+    res.json({success:true,message:'Senha atualizada com sucesso'});
 });
 
 module.exports = router;
