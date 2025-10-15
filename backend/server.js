@@ -9,7 +9,7 @@ const jwt = require('jsonwebtoken');
 const db = require('./db');
 const authMiddleware = require('./middleware/authMiddleware');
 const authRoutes = require('./routes/auth');
-const serviceRoutes = require('./routes/services');
+const serviceRoutes = require('./routes/services'); // Rota para os serviços/fluxos
 const BotInstance = require('./BotInstance');
 
 const app = express();
@@ -23,20 +23,23 @@ const JWT_SECRET = process.env.JWT_SECRET;
 app.use(cors());
 app.use(bodyParser.json());
 
+// Mapa para guardar as instâncias de bot que estão ativas
 const activeInstances = new Map();
 
-// Lógica do Socket.IO para autenticação
+// Lógica do Socket.IO para autenticar a conexão do frontend
 io.on('connection', (socket) => {
     try {
         const token = socket.handshake.auth.token;
         const decoded = jwt.verify(token, JWT_SECRET);
         if (decoded && decoded.id) {
+            // Adiciona o socket a uma "sala" privada com o ID do usuário
+            // Isso garante que ele só receba notificações das suas próprias instâncias
             socket.join(decoded.id);
             console.log(`Socket ${socket.id} entrou na sala do usuário ${decoded.id}`);
         }
     } catch (error) {
         console.error("Falha na autenticação do socket:", error.message);
-        socket.disconnect();
+        socket.disconnect(); // Desconecta se o token for inválido
     }
 });
 
@@ -44,11 +47,13 @@ io.on('connection', (socket) => {
 app.use('/api/auth', authRoutes);
 
 // --- PROTEÇÃO ---
+// Tudo abaixo desta linha exige um token de autenticação válido
 app.use(authMiddleware);
 
 // --- ROTAS PROTEGIDAS ---
 app.use('/api/services', serviceRoutes);
 
+// Rota para LISTAR as instâncias do usuário logado
 app.get('/api/instances', async (req, res) => {
     try {
         const instances = await db.getInstancesByOwner(req.user.id);
@@ -58,6 +63,7 @@ app.get('/api/instances', async (req, res) => {
     }
 });
 
+// Rota para CRIAR e CONECTAR uma nova instância de bot
 app.post('/api/instances/connect', async (req, res) => {
     const { instanceName } = req.body;
     const ownerId = req.user.id; 
@@ -83,21 +89,19 @@ app.post('/api/instances/connect', async (req, res) => {
     }
 });
 
+// Rota para DESCONECTAR uma instância
 app.post('/api/instances/:id/disconnect', async (req, res) => {
     const { id } = req.params;
     const ownerId = req.user.id;
-
     try {
         const instance = await db.getInstanceById(id);
         if (!instance || instance.ownerId !== ownerId) {
             return res.status(404).json({ error: "Instância não encontrada." });
         }
-
         if (activeInstances.has(id)) {
             await activeInstances.get(id).stop();
             activeInstances.delete(id);
         }
-
         await db.updateInstance(id, { status: 'offline' });
         res.json({ message: "Instância desconectada." });
     } catch(error) {
