@@ -1,22 +1,21 @@
 const jwt = require('jsonwebtoken');
-const JWT_SECRET = process.env.JWT_SECRET;
+const User = require('../models/User');
 
-function authMiddleware(req, res, next) {
-    const authHeader = req.headers.authorization;
-
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({ error: 'Acesso negado. Nenhum token fornecido.' });
-    }
-
-    const token = authHeader.split(' ')[1];
+exports.authUser = async (req, res, next) => {
+    const token = req.headers.authorization?.split(' ')[1];
+    if(!token) return res.status(401).json({success:false, message:'Token não fornecido'});
 
     try {
-        const decoded = jwt.verify(token, JWT_SECRET);
-        req.user = decoded;
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        req.user = await User.findById(decoded.id);
+        if(!req.user) return res.status(401).json({success:false, message:'Usuário não encontrado'});
         next();
-    } catch (error) {
-        return res.status(403).json({ error: 'Token inválido ou expirado.' });
+    } catch(err){
+        res.status(401).json({success:false, message:'Token inválido'});
     }
-}
+};
 
-module.exports = authMiddleware;
+exports.authAdmin = (req, res, next) => {
+    if(req.user?.admin) next();
+    else res.status(403).json({success:false, message:'Acesso negado'});
+};
