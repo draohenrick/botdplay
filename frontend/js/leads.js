@@ -1,98 +1,96 @@
-const BACKEND_URL = 'https://botdplay.onrender.com';
-
 const leadsContainer = document.getElementById('leads-container');
-const logoutLinks = document.querySelectorAll('[onclick="logout()"]');
+const searchInput = document.getElementById('search-lead');
+const statusFilter = document.getElementById('status-filter');
+const refreshBtn = document.getElementById('refresh-leads');
+const exportBtn = document.getElementById('export-csv');
 
-// Função para proteger página
-function protectPage() {
-    const token = localStorage.getItem('authToken');
-    if (!token) {
-        alert('Acesso negado. Faça login para continuar.');
-        window.location.href = '/login.html';
-    }
-}
+async function loadLeads(){
+    const token = localStorage.getItem('token');
+    if(!token) return window.location.href='index.html';
 
-// Função para carregar leads
-async function loadLeadsPage() {
-    const token = localStorage.getItem('authToken');
-    if (!token) return;
-
-    try {
-        const response = await fetch(`${BACKEND_URL}/api/leads`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            }
+    try{
+        const res = await fetch(`${BACKEND_URL}/api/leads`,{
+            headers:{'Authorization':`Bearer ${token}`}
         });
-
-        if (response.status === 401 || response.status === 403) {
-            localStorage.removeItem('authToken');
-            alert('Sua sessão expirou. Faça login novamente.');
-            window.location.href = '/login.html';
-            return;
+        const data = await res.json();
+        if(data.success){
+            renderLeads(data.leads);
         }
+    }catch(err){console.error(err);}
+}
 
-        const leads = await response.json();
+function renderLeads(leads){
+    if(!leads.length){
+        leadsContainer.innerHTML = `<div class="text-center py-3 text-muted">Nenhum lead encontrado</div>`;
+        return;
+    }
 
-        if (leadsContainer) {
-            if (leads.length === 0) {
-                leadsContainer.textContent = 'Nenhum lead encontrado.';
-                return;
-            }
+    leadsContainer.innerHTML = '';
+    leads.forEach(lead=>{
+        const el = document.createElement('a');
+        el.href = '#';
+        el.className = 'list-group-item list-group-item-action bg-dark text-light lead-item';
+        el.dataset.name = lead.name;
+        el.dataset.email = lead.email;
+        el.dataset.phone = lead.phone;
+        el.dataset.status = lead.status;
+        el.dataset.origin = lead.origin;
+        el.dataset.notes = lead.notes;
+        el.innerHTML = `${lead.status==='converted'?'✅':'🧩'} <strong>${lead.name}</strong> - ${formatStatus(lead.status)}`;
+        el.onclick = ()=>openLead(el);
+        leadsContainer.appendChild(el);
+    });
+}
 
-            // Cria tabela de leads
-            const table = document.createElement('table');
-            table.className = 'table table-striped';
-            table.innerHTML = `
-                <thead>
-                    <tr>
-                        <th>Nome</th>
-                        <th>Email</th>
-                        <th>Telefone</th>
-                        <th>Data/Hora</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${leads.map(lead => `
-                        <tr>
-                            <td>${lead.nome}</td>
-                            <td>${lead.email}</td>
-                            <td>${lead.telefone || '-'}</td>
-                            <td>${new Date(lead.createdAt).toLocaleString()}</td>
-                            <td>
-                                <button class="btn btn-sm btn-primary" onclick="viewLead('${lead.id}')">Visualizar</button>
-                            </td>
-                        </tr>
-                    `).join('')}
-                </tbody>
-            `;
-            leadsContainer.innerHTML = '';
-            leadsContainer.appendChild(table);
-        }
+function openLead(el){
+    const modal = new bootstrap.Modal(document.getElementById('leadModal'));
+    const details = document.getElementById('lead-details');
+    details.innerHTML = `
+        <h5>${el.dataset.name}</h5>
+        <p><strong>E-mail:</strong> ${el.dataset.email}</p>
+        <p><strong>Telefone:</strong> ${el.dataset.phone}</p>
+        <p><strong>Status:</strong> ${formatStatus(el.dataset.status)}</p>
+        <p><strong>Origem:</strong> ${el.dataset.origin}</p>
+        <p><strong>Notas:</strong> ${el.dataset.notes}</p>
+    `;
+    modal.show();
+}
 
-    } catch (error) {
-        console.error('Erro ao carregar leads:', error);
-        if (leadsContainer) leadsContainer.textContent = 'Erro ao carregar leads.';
+function formatStatus(status){
+    switch(status){
+        case 'new': return 'Novo';
+        case 'in_progress': return 'Em negociação';
+        case 'converted': return 'Convertido';
+        case 'lost': return 'Perdido';
+        default: return 'Desconhecido';
     }
 }
 
-// Função de logout
-function logout() {
-    localStorage.removeItem('authToken');
-    alert('Você saiu com sucesso.');
-    window.location.href = '/login.html';
+function filterLeads(){
+    const searchValue = searchInput.value.toLowerCase();
+    const statusValue = statusFilter.value;
+    document.querySelectorAll('.lead-item').forEach(item=>{
+        const matchSearch = [item.dataset.name,item.dataset.email,item.dataset.phone].some(v=>v.toLowerCase().includes(searchValue));
+        const matchStatus = statusValue==='all'||item.dataset.status===statusValue;
+        item.style.display = matchSearch && matchStatus ? '' : 'none';
+    });
 }
 
-// Associa logout a todos os links
-logoutLinks.forEach(link => link.addEventListener('click', logout));
-
-// Placeholder para visualizar lead
-function viewLead(id) {
-    alert(`Visualizar lead ID: ${id} (função ainda não implementada)`);
+function exportLeadsToCSV(){
+    let csv = "Nome,E-mail,Telefone,Status,Origem,Notas\n";
+    document.querySelectorAll('.lead-item').forEach(item=>{
+        csv += `"${item.dataset.name}","${item.dataset.email}","${item.dataset.phone}","${formatStatus(item.dataset.status)}","${item.dataset.origin}","${item.dataset.notes}"\n`;
+    });
+    const blob = new Blob([csv],{type:'text/csv;charset=utf-8;'});
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'leads.csv';
+    link.click();
 }
 
-// Executa proteção e carregamento ao abrir a página
-protectPage();
-loadLeadsPage();
+searchInput?.addEventListener('input', filterLeads);
+statusFilter?.addEventListener('change', filterLeads);
+refreshBtn?.addEventListener('click', loadLeads);
+exportBtn?.addEventListener('click', exportLeadsToCSV);
+
+document.addEventListener('DOMContentLoaded', loadLeads);
