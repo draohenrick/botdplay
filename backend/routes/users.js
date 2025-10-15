@@ -1,31 +1,28 @@
 const express = require('express');
 const router = express.Router();
+const bcrypt = require('bcrypt');
 const User = require('../models/User');
-const bcrypt = require('bcryptjs'); // para senha segura
+const { authUser, authAdmin } = require('../middleware/auth');
 
-// Registrar
-router.post('/register', async (req, res) => {
-  const { name, email, password } = req.body;
-  if (!name || !email || !password) return res.status(400).json({ error: 'Todos os campos são obrigatórios' });
-
-  const exists = await User.findOne({ email });
-  if (exists) return res.status(400).json({ error: 'Email já cadastrado' });
-
-  const hash = await bcrypt.hash(password, 10);
-  const user = await User.create({ name, email, password: hash });
-  res.json({ message: 'Usuário registrado com sucesso!', userId: user._id });
+// Listar usuários
+router.get('/', authUser, authAdmin, async (req,res)=>{
+    const users = await User.find();
+    res.json({success:true, users});
 });
 
-// Login
-router.post('/login', async (req, res) => {
-  const { email, password } = req.body;
-  const user = await User.findOne({ email });
-  if (!user) return res.status(404).json({ error: 'Usuário não encontrado' });
+// Criar usuário
+router.post('/', authUser, authAdmin, async (req,res)=>{
+    const { name,email,password,admin } = req.body;
+    const hashed = await bcrypt.hash(password,10);
+    const user = new User({name,email,password:hashed,admin});
+    await user.save();
+    res.json({success:true,user});
+});
 
-  const valid = await bcrypt.compare(password, user.password);
-  if (!valid) return res.status(401).json({ error: 'Senha incorreta' });
-
-  res.json({ message: 'Login sucesso', userId: user._id });
+// Deletar usuário
+router.delete('/:id', authUser, authAdmin, async (req,res)=>{
+    await User.findByIdAndDelete(req.params.id);
+    res.json({success:true});
 });
 
 module.exports = router;
