@@ -11,6 +11,7 @@
 <body>
   <div class="container-fluid">
     <div class="row">
+      <!-- Sidebar -->
       <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse">
         <div class="position-sticky sidebar-sticky">
           <div class="text-center my-4">
@@ -29,14 +30,16 @@
         </div>
       </nav>
 
+      <!-- Main -->
       <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
         <div class="page-header d-flex justify-content-between align-items-center my-3">
           <h1>Usuários</h1>
           <button class="btn btn-primary" id="addUserBtn">+ Novo Usuário</button>
         </div>
+
         <div class="card mb-4">
           <div class="card-body">
-            <table class="table table-striped">
+            <table class="table table-dark table-striped align-middle">
               <thead>
                 <tr>
                   <th>Nome</th>
@@ -46,7 +49,7 @@
                 </tr>
               </thead>
               <tbody id="users-container">
-                <tr><td colspan="4">Carregando usuários...</td></tr>
+                <tr><td colspan="4" class="text-center">Carregando usuários...</td></tr>
               </tbody>
             </table>
           </div>
@@ -55,8 +58,125 @@
     </div>
   </div>
 
+  <!-- Modal Novo/Editar Usuário -->
+  <div class="modal fade" id="userModal" tabindex="-1" aria-labelledby="userModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content bg-dark text-light">
+        <div class="modal-header border-secondary">
+          <h5 class="modal-title" id="userModalLabel">Novo Usuário</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <form id="userForm">
+          <div class="modal-body">
+            <div class="mb-3">
+              <label for="userName" class="form-label">Nome</label>
+              <input type="text" id="userName" class="form-control" required>
+            </div>
+            <div class="mb-3">
+              <label for="userEmail" class="form-label">Email</label>
+              <input type="email" id="userEmail" class="form-control" required>
+            </div>
+            <div class="mb-3">
+              <label for="userRole" class="form-label">Função</label>
+              <select id="userRole" class="form-select">
+                <option value="admin">Admin</option>
+                <option value="user">Usuário</option>
+              </select>
+            </div>
+          </div>
+          <div class="modal-footer border-secondary">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-success">Salvar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="js/auth.js"></script>
-  <script src="js/usuarios.js"></script>
-  <script>protectPage();</script>
+  <script>
+    protectPage();
+
+    const usersContainer = document.getElementById('users-container');
+    const addUserBtn = document.getElementById('addUserBtn');
+    const userModal = new bootstrap.Modal(document.getElementById('userModal'));
+    const userForm = document.getElementById('userForm');
+    const userName = document.getElementById('userName');
+    const userEmail = document.getElementById('userEmail');
+    const userRole = document.getElementById('userRole');
+    let editingIndex = null;
+
+    // Mock de usuários
+    let users = [
+      { name: "João Silva", email: "joao@dplay.com", role: "admin" },
+      { name: "Maria Oliveira", email: "maria@dplay.com", role: "user" }
+    ];
+
+    function loadUsers() {
+      usersContainer.innerHTML = '';
+      if (users.length === 0) {
+        usersContainer.innerHTML = '<tr><td colspan="4" class="text-center">Nenhum usuário encontrado.</td></tr>';
+        return;
+      }
+      users.forEach((user, index) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${user.name}</td>
+          <td>${user.email}</td>
+          <td>${user.role}</td>
+          <td>
+            <button class="btn btn-sm btn-warning me-1" onclick="editUser(${index})">✏️ Editar</button>
+            <button class="btn btn-sm btn-danger" onclick="deleteUser(${index})">🗑️ Excluir</button>
+          </td>
+        `;
+        usersContainer.appendChild(tr);
+      });
+    }
+
+    addUserBtn.addEventListener('click', () => {
+      editingIndex = null;
+      userForm.reset();
+      document.getElementById('userModalLabel').innerText = 'Novo Usuário';
+      userModal.show();
+    });
+
+    userForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const newUser = {
+        name: userName.value.trim(),
+        email: userEmail.value.trim(),
+        role: userRole.value
+      };
+      if (editingIndex !== null) {
+        users[editingIndex] = newUser;
+      } else {
+        users.push(newUser);
+      }
+      loadUsers();
+      userModal.hide();
+      userForm.reset();
+    });
+
+    function editUser(index) {
+      editingIndex = index;
+      const user = users[index];
+      userName.value = user.name;
+      userEmail.value = user.email;
+      userRole.value = user.role;
+      document.getElementById('userModalLabel').innerText = 'Editar Usuário';
+      userModal.show();
+    }
+
+    function deleteUser(index) {
+      if (confirm("Deseja realmente excluir este usuário?")) {
+        users.splice(index, 1);
+        loadUsers();
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadUsers);
+  </script>
 </body>
 </html>
