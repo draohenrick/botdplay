@@ -1,25 +1,43 @@
-# ABORDAGEM DEFINITIVA: Usa a imagem oficial do Puppeteer que já vem com Node.js e Chrome
-# Esta imagem elimina a necessidade de instalar manualmente o Chrome e suas dependências.
-FROM ghcr.io/puppeteer/puppeteer:22.10.0
+# Use uma imagem oficial Node 20 com Puppeteer
+FROM node:20-bullseye-slim
 
-# A imagem já vem com um usuário não-root 'pptruser'. Mudamos para a pasta de trabalho dele.
-# Por segurança, a aplicação não rodará como 'root'.
-WORKDIR /home/pptruser/app
+# Configurações de Puppeteer/Chromium
+RUN apt-get update && apt-get install -y \
+    wget \
+    ca-certificates \
+    fonts-liberation \
+    libnss3 \
+    libxss1 \
+    libasound2 \
+    libatk-bridge2.0-0 \
+    libgtk-3-0 \
+    libx11-xcb1 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxrandr2 \
+    xdg-utils \
+    && rm -rf /var/lib/apt/lists/*
 
-# A imagem já inclui o 'git', então não precisamos instalá-lo.
+# Cria diretório da aplicação
+WORKDIR /usr/src/app
 
-# Copia os arquivos de pacote, garantindo que o dono seja o usuário 'pptruser'
-COPY --chown=pptruser:pptruser package*.json ./
+# Copia package.json e package-lock.json
+COPY package*.json ./
 
-# Instala as dependências de produção do seu projeto
+# Instala dependências, ignora devDependencies
 RUN npm install --omit=dev
 
-# Copia o resto do código do seu projeto
-COPY --chown=pptruser:pptruser . .
+# Copia todo o restante do app
+COPY . .
 
-# Expõe a porta que o Render irá usar para se comunicar com o seu serviço
+# Define variáveis de ambiente essenciais para Render
+# Render define PORT automaticamente, mas é bom garantir
+ENV NODE_ENV=production
+ENV PORT=10000
+
+# Expõe a porta do Render
 EXPOSE 10000
 
-# O comando para iniciar a sua aplicação
-CMD [ "node", "server.js" ]
-
+# Comando para iniciar o app
+# Puppeteer precisa de args --no-sandbox
+CMD ["node", "-e", "process.env.PUPPETEER_SKIP_CHROMIUM_DOWNLOAD = 'true'; require('./server.js')"]
