@@ -6,16 +6,18 @@ RUN apt-get update && apt-get install -y \
     git \
     wget \
     gnupg \
+    ca-certificates \
     --no-install-recommends
 
 # Adiciona o repositório do Google Chrome de forma segura e moderna
-RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-chrome-archive-keyring.gpg \
-    && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome-archive-keyring.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list
+RUN wget -q https://dl-ssl.google.com/linux/linux_signing_key.pub -O /tmp/google.pub \
+    && gpg --dearmor /tmp/google.pub -o /usr/share/keyrings/google-chrome-archive-keyring.gpg \
+    && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome-archive-keyring.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list \
+    && rm /tmp/google.pub
 
 # Instala o Google Chrome e a lista completa de dependências necessárias para o Puppeteer
 RUN apt-get update && apt-get install -y \
     google-chrome-stable \
-    ca-certificates \
     fonts-liberation \
     libappindicator3-1 \
     libasound2 \
