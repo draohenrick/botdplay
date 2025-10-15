@@ -25,7 +25,7 @@
         <!-- Main -->
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
             <h1 class="mt-4">Área Admin</h1>
-            <div id="adminData" class="mt-4"></div>
+            <div id="adminData" class="mt-4">Carregando informações...</div>
             <button id="logoutAdminBtn" class="btn btn-danger mt-3">Sair</button>
         </main>
     </div>
@@ -39,20 +39,28 @@ async function loadAdmin() {
     try {
         const res = await fetch(`${BACKEND_URL}/api/account`, {
             method: 'GET',
-            headers: { 'Authorization': `Bearer ${token}` }
+            headers: { 
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
         });
+
+        if (!res.ok) throw new Error('Falha ao conectar ao backend');
+
         const data = await res.json();
+
         if (data.success && data.user.admin) {
-            const html = `
+            document.getElementById('adminData').innerHTML = `
                 <p><strong>Email Admin:</strong> ${data.user.email}</p>
                 <p><strong>Área restrita:</strong> Sim</p>
+                <p><strong>Último login:</strong> ${data.user.lastLogin || 'Não registrado'}</p>
             `;
-            document.getElementById('adminData').innerHTML = html;
         } else {
             localStorage.removeItem('adminToken');
             window.location.href = 'index.html';
         }
-    } catch {
+    } catch (err) {
+        console.error(err);
         document.getElementById('adminData').innerText = 'Erro de conexão com o backend';
     }
 }
@@ -62,6 +70,7 @@ document.getElementById('logoutAdminBtn').addEventListener('click', () => {
     window.location.href = 'index.html';
 });
 
+// Carrega os dados do admin ao abrir a página
 loadAdmin();
 </script>
 </body>
