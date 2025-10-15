@@ -1,106 +1,95 @@
-// URL do backend
-const BACKEND_URL = 'https://botdplay.onrender.com';
-
-// Elementos da página
 const usersContainer = document.getElementById('users-container');
-const logoutLinks = document.querySelectorAll('[onclick="logout()"]'); // todos links de logout
+const addUserBtn = document.getElementById('addUserBtn');
 
-// Função para proteger página
-function protectPage() {
-    const token = localStorage.getItem('authToken');
-    if (!token) {
-        alert('Acesso negado. Faça login para continuar.');
-        window.location.href = '/login.html';
-    }
-}
+async function loadUsers(){
+    const token = localStorage.getItem('token');
+    if(!token) return window.location.href='index.html';
 
-// Função para carregar os usuários
-async function loadUsuariosPage() {
-    const token = localStorage.getItem('authToken');
-    if (!token) return;
-
-    try {
-        const response = await fetch(`${BACKEND_URL}/api/users`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            }
+    try{
+        const res = await fetch(`${BACKEND_URL}/api/users`,{
+            headers:{'Authorization':`Bearer ${token}`}
         });
-
-        if (response.status === 401 || response.status === 403) {
-            localStorage.removeItem('authToken');
-            alert('Sua sessão expirou. Faça login novamente.');
-            window.location.href = '/login.html';
-            return;
+        const data = await res.json();
+        if(data.success){
+            renderUsers(data.users);
         }
+    }catch(err){console.error(err);}
+}
 
-        const users = await response.json();
-
-        if (usersContainer) {
-            if (users.length === 0) {
-                usersContainer.textContent = 'Nenhum usuário encontrado.';
-                return;
-            }
-
-            // Cria tabela de usuários
-            const table = document.createElement('table');
-            table.className = 'table table-striped';
-            table.innerHTML = `
-                <thead>
-                    <tr>
-                        <th>Nome</th>
-                        <th>Email</th>
-                        <th>Função</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${users.map(user => `
-                        <tr>
-                            <td>${user.name}</td>
-                            <td>${user.email}</td>
-                            <td>${user.role}</td>
-                            <td>
-                                <button class="btn btn-sm btn-primary me-2" onclick="editUser('${user.id}')">Editar</button>
-                                <button class="btn btn-sm btn-danger" onclick="deleteUser('${user.id}')">Excluir</button>
-                            </td>
-                        </tr>
-                    `).join('')}
-                </tbody>
-            `;
-            usersContainer.innerHTML = '';
-            usersContainer.appendChild(table);
-        }
-
-    } catch (error) {
-        if (usersContainer) usersContainer.textContent = 'Erro ao carregar os usuários.';
-        console.error('Erro ao carregar usuários:', error);
+function renderUsers(users){
+    usersContainer.innerHTML = '';
+    if(!users.length){
+        usersContainer.innerHTML = `<tr><td colspan="4" class="text-center">Nenhum usuário cadastrado</td></tr>`;
+        return;
     }
+
+    users.forEach(user=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${user.name}</td>
+            <td>${user.email}</td>
+            <td>${user.role || 'Usuário'}</td>
+            <td>
+                <button class="btn btn-sm btn-warning" onclick="editUser('${user._id}')">✏️ Editar</button>
+                <button class="btn btn-sm btn-danger" onclick="deleteUser('${user._id}')">🗑️ Excluir</button>
+            </td>
+        `;
+        usersContainer.appendChild(tr);
+    });
 }
 
-// Função de logout
-function logout() {
-    localStorage.removeItem('authToken');
-    alert('Você saiu com sucesso.');
-    window.location.href = '/login.html';
+addUserBtn?.addEventListener('click', async()=>{
+    const name = prompt('Nome do usuário:');
+    if(!name) return;
+    const email = prompt('Email:');
+    if(!email) return;
+    const password = prompt('Senha:');
+    if(!password) return;
+
+    const token = localStorage.getItem('token');
+    try{
+        const res = await fetch(`${BACKEND_URL}/api/users`,{
+            method:'POST',
+            headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+            body: JSON.stringify({name,email,password})
+        });
+        const data = await res.json();
+        if(data.success) loadUsers();
+        else alert(data.message);
+    }catch(err){console.error(err);}
+});
+
+async function deleteUser(id){
+    if(!confirm('Deseja realmente excluir este usuário?')) return;
+    const token = localStorage.getItem('token');
+    try{
+        const res = await fetch(`${BACKEND_URL}/api/users/${id}`,{
+            method:'DELETE',
+            headers:{'Authorization':`Bearer ${token}`}
+        });
+        const data = await res.json();
+        if(data.success) loadUsers();
+        else alert(data.message);
+    }catch(err){console.error(err);}
 }
 
-// Associa logout a todos os links com onclick="logout()"
-logoutLinks.forEach(link => link.addEventListener('click', logout));
+async function editUser(id){
+    const name = prompt('Novo nome:');
+    if(!name) return;
+    const role = prompt('Função (admin ou user):');
+    if(!role) return;
 
-// Funções para editar e excluir usuários
-function editUser(id) {
-    alert(`Função de editar usuário ID: ${id} ainda não implementada.`);
-    // Aqui você pode abrir modal para editar usuário
+    const token = localStorage.getItem('token');
+    try{
+        const res = await fetch(`${BACKEND_URL}/api/users/${id}`,{
+            method:'PUT',
+            headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+            body: JSON.stringify({name,role})
+        });
+        const data = await res.json();
+        if(data.success) loadUsers();
+        else alert(data.message);
+    }catch(err){console.error(err);}
 }
 
-function deleteUser(id) {
-    if (!confirm('Deseja realmente excluir este usuário?')) return;
-    alert(`Função de deletar usuário ID: ${id} ainda não implementada.`);
-    // Aqui você pode chamar backend DELETE /api/users/:id
-}
-
-// Executa proteção e carregamento ao abrir a página
-protectPage();
-loadUsuariosPage();
+document.addEventListener('DOMContentLoaded', loadUsers);
