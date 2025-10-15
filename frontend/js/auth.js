@@ -1,16 +1,13 @@
-// --- Proteção de páginas ---
+// Protege páginas que exigem login
 function protectPage() {
-  const token = localStorage.getItem('authToken');
-  if (!token) {
-    window.location.href = '/login.html';
-    return;
-  }
-  // Opcional: validar token com backend
+    const token = localStorage.getItem('token');
+    if (!token) {
+        window.location.href = 'index.html';
+    }
 }
 
-// --- Logout ---
+// Logout
 function logout() {
-  localStorage.removeItem('authToken');
-  localStorage.removeItem('user');
-  window.location.href = '/login.html';
+    localStorage.removeItem('token');
+    window.location.href = 'index.html';
 }
