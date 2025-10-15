@@ -1,27 +1,25 @@
-# NOVA ABORDAGEM: Usa uma imagem oficial pré-construída que já contém o Puppeteer e o Chrome.
-# Isso elimina a necessidade de instalar manualmente o Chrome e suas dependências.
+# ABORDAGEM DEFINITIVA: Usa a imagem oficial do Puppeteer que já vem com Node.js e Chrome
+# Esta imagem elimina a necessidade de instalar manualmente o Chrome e suas dependências.
 FROM ghcr.io/puppeteer/puppeteer:22.10.0
 
-# O Puppeteer já vem instalado. Agora, instalamos o Git que é necessário para o whatsapp-web.js.
-# O usuário 'pptruser' já existe nesta imagem, então mudamos para o root para instalar pacotes.
-USER root
-RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
-
-# Volta para o usuário padrão não-root para mais segurança.
-USER pptruser
-
-# Define o diretório de trabalho dentro da pasta home do usuário pptruser.
+# A imagem já vem com um usuário não-root 'pptruser'. Mudamos para a pasta de trabalho dele.
+# Por segurança, a aplicação não rodará como 'root'.
 WORKDIR /home/pptruser/app
 
-# Copia os arquivos de pacote para o diretório de trabalho.
+# A imagem já inclui o 'git', então não precisamos instalá-lo.
+
+# Copia os arquivos de pacote, garantindo que o dono seja o usuário 'pptruser'
 COPY --chown=pptruser:pptruser package*.json ./
 
-# Instala apenas as dependências de produção do seu projeto.
+# Instala as dependências de produção do seu projeto
 RUN npm install --omit=dev
 
-# Copia o resto do código do seu projeto.
+# Copia o resto do código do seu projeto
 COPY --chown=pptruser:pptruser . .
 
-# Comando para iniciar a aplicação.
+# Expõe a porta que o Render irá usar para se comunicar com o seu serviço
+EXPOSE 10000
+
+# O comando para iniciar a sua aplicação
 CMD [ "node", "server.js" ]
 
