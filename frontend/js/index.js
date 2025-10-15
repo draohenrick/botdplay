@@ -1,55 +1,80 @@
 const BACKEND_URL = 'https://botdplay.onrender.com';
 
-const logoutButton = document.getElementById('logout-button');
-const activeBotsElem = document.getElementById('active-bots');
-const leadsCountElem = document.getElementById('leads-count');
-const dataContainer = document.getElementById('data-container');
+// Função para buscar dados do dashboard
+async function fetchDashboardData() {
+  const token = localStorage.getItem('authToken');
+  if (!token) return;
 
-async function loadDashboard() {
-    const token = localStorage.getItem('authToken');
-    if(!token) {
-        alert('Acesso negado. Faça login.');
-        window.location.href = '/login.html';
-        return;
-    }
-
-    try {
-        const response = await fetch(`${BACKEND_URL}/api/dashboard-data`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
-        });
-
-        if(response.status === 401 || response.status === 403){
-            localStorage.removeItem('authToken');
-            alert('Sessão expirada.');
-            window.location.href = '/login.html';
-            return;
-        }
-
-        const data = await response.json();
-
-        // Atualiza contadores
-        activeBotsElem.textContent = data.activeBots || 0;
-        leadsCountElem.textContent = data.totalLeads || 0;
-        dataContainer.textContent = JSON.stringify(data.bots, null, 2);
-
-    } catch(err){
-        console.error('Erro ao carregar dashboard:', err);
-        dataContainer.textContent = 'Erro ao carregar dados.';
-    }
-}
-
-// Logout
-if(logoutButton){
-    logoutButton.addEventListener('click', () => {
-        localStorage.removeItem('authToken');
-        alert('Você saiu com sucesso.');
-        window.location.href = '/login.html';
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/dashboard`, {
+      headers: { Authorization: `Bearer ${token}` },
     });
+
+    if (!response.ok) throw new Error('Erro ao buscar dados do dashboard.');
+
+    const data = await response.json();
+    updateDashboard(data);
+  } catch (err) {
+    console.error(err);
+    alert('Não foi possível carregar os dados do dashboard. Faça login novamente.');
+    logout();
+  }
 }
 
-// Carrega dashboard
-loadDashboard();
+// Atualiza o dashboard com dados reais
+function updateDashboard(data) {
+  const user = data.user || {};
+  document.getElementById('userName').textContent = user.nome || 'Usuário';
+  document.getElementById('userCode').textContent = `Código: ${user.codigo || '-'}`;
+  document.getElementById('userLevel').textContent = `Nível: ${user.nivel || '-'}`;
+  document.getElementById('userWhatsapp').textContent = `WhatsApp: ${user.whatsapp || '-'}`;
+
+  document.getElementById('leadCount').textContent = data.leads ?? 0;
+  document.getElementById('conversationCount').textContent = data.conversations ?? 0;
+  document.getElementById('connectionCount').textContent = data.connections ?? 0;
+
+  const botStatus = document.getElementById('botStatus');
+  botStatus.textContent = data.botOnline ? 'Online' : 'Offline';
+  botStatus.classList.toggle('text-success', data.botOnline);
+  botStatus.classList.toggle('text-danger', !data.botOnline);
+
+  const logList = document.getElementById('logList');
+  logList.innerHTML = '';
+  (data.logs || []).forEach(log => {
+    const li = document.createElement('li');
+    li.className = 'list-group-item bg-transparent text-light border-secondary';
+    li.textContent = log;
+    logList.appendChild(li);
+  });
+
+  // Gráfico de atividades
+  const ctx = document.getElementById('activityChart');
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
+      datasets: [{
+        label: 'Mensagens Processadas',
+        data: data.weeklyActivity || [0, 0, 0, 0, 0, 0, 0],
+        borderColor: 'rgba(75, 192, 192, 1)',
+        tension: 0.3,
+        fill: false,
+        pointRadius: 4,
+        borderWidth: 2
+      }]
+    },
+    options: {
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.1)' } },
+        y: { grid: { color: 'rgba(255,255,255,0.1)' }, beginAtZero: true }
+      },
+      plugins: { legend: { labels: { color: 'white' } } }
+    }
+  });
+}
+
+// Inicialização
+document.addEventListener('DOMContentLoaded', () => {
+  protectPage();
+  fetchDashboardData();
+});
