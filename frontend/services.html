@@ -11,6 +11,7 @@
 <body>
     <div class="container-fluid">
       <div class="row">
+        <!-- Sidebar -->
         <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse">
             <div class="position-sticky sidebar-sticky">
                 <div class="text-center my-4">
@@ -29,6 +30,7 @@
             </div>
         </nav>
     
+        <!-- Main -->
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
             <div class="page-header d-flex justify-content-between align-items-center my-3">
                 <h1>Configurar Bot</h1>
@@ -39,11 +41,7 @@
             
             <p>Gerencie os serviços, fluxos e respostas automáticas do seu bot.</p>
 
-            <div class="input-group mb-3">
-                <input type="text" id="searchService" class="form-control" placeholder="Buscar fluxo por nome...">
-                <button class="btn btn-outline-secondary" type="button" onclick="filterServices()">Buscar</button>
-            </div>
-
+            <!-- Services List -->
             <div class="card">
                 <div class="card-body">
                     <div id="services-container" class="table-responsive">
@@ -52,18 +50,19 @@
                                 <tr>
                                     <th>Nome do Fluxo</th>
                                     <th>Descrição</th>
-                                    <th>Ativo</th>
+                                    <th>Palavras-chave</th>
                                     <th>Ações</th>
                                 </tr>
                             </thead>
                             <tbody id="servicesTableBody">
-                                <tr><td colspan="4" class="text-center">Carregando serviços...</td></tr>
+                                <tr><td colspan="4" class="text-center">Carregando fluxos...</td></tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
 
+            <!-- Modal: Novo Serviço -->
             <div class="modal fade" id="addServiceModal" tabindex="-1" aria-labelledby="addServiceLabel" aria-hidden="true">
                 <div class="modal-dialog modal-lg modal-dialog-centered">
                     <div class="modal-content bg-dark text-light">
@@ -71,57 +70,36 @@
                             <h5 class="modal-title" id="addServiceLabel">Criar Novo Fluxo do Bot</h5>
                             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                         </div>
-                        <div class="modal-body">
-                            <form id="newServiceForm">
+                        <form id="newServiceForm">
+                            <div class="modal-body">
                                 <div class="mb-3">
-                                    <label for="serviceName" class="form-label">Nome do Fluxo</label>
-                                    <input type="text" id="serviceName" class="form-control" required>
+                                    <label for="serviceLabel" class="form-label">Nome do Fluxo (Menu)</label>
+                                    <input type="text" id="serviceLabel" class="form-control" required>
                                 </div>
                                 <div class="mb-3">
                                     <label for="serviceDescription" class="form-label">Descrição</label>
-                                    <textarea id="serviceDescription" class="form-control" rows="3" required></textarea>
+                                    <textarea id="serviceDescription" class="form-control" rows="2" required></textarea>
                                 </div>
                                 <div class="mb-3">
                                     <label for="serviceKeywords" class="form-label">Palavras-chave (separadas por vírgula)</label>
-                                    <input type="text" id="serviceKeywords" class="form-control">
+                                    <input type="text" id="serviceKeywords" class="form-control" placeholder="ex: ajuda, atendente, falar com humano">
                                 </div>
-                                <div class="mb-3">
-                                    <label for="serviceResponse" class="form-label">Resposta Automática</label>
-                                    <textarea id="serviceResponse" class="form-control" rows="3" placeholder="Mensagem que o bot responderá..."></textarea>
-                                </div>
-                                <div class="form-check form-switch mb-3">
-                                    <input class="form-check-input" type="checkbox" id="serviceActive" checked>
-                                    <label class="form-check-label" for="serviceActive">Ativar este fluxo</label>
-                                </div>
-                            </form>
-                        </div>
-                        <div class="modal-footer border-secondary">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="submit" form="newServiceForm" class="btn btn-success">Salvar</button>
-                        </div>
+                                <!-- Adicione mais campos aqui se necessário (ex: briefing_questions) -->
+                            </div>
+                            <div class="modal-footer border-secondary">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                <button type="submit" class="btn btn-success">Salvar Fluxo</button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
-
         </main>
       </div>
     </div>
-
+    
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/services.js"></script>
-    <script>
-        // Função para filtrar a tabela localmente (não precisa de chamada ao backend)
-        function filterServices() {
-            const query = document.getElementById('searchService').value.toLowerCase();
-            const rows = document.querySelectorAll('#servicesTableBody tr');
-            rows.forEach(row => {
-                // Acessa o texto da primeira célula (Nome do Fluxo)
-                const name = row.cells[0]?.innerText.toLowerCase() || '';
-                // Mostra ou esconde a linha da tabela
-                row.style.display = name.includes(query) ? '' : 'none';
-            });
-        }
-    </script>
 </body>
 </html>
