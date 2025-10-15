@@ -1,9 +1,20 @@
 # Usa uma imagem base mais completa que a 'alpine'
 FROM node:18-slim
 
-# Instala o Git e todas as dependências do sistema para o Puppeteer
+# Instala o Git e dependências essenciais para adicionar novos repositórios de pacotes
 RUN apt-get update && apt-get install -y \
     git \
+    wget \
+    gnupg \
+    --no-install-recommends
+
+# Adiciona o repositório do Google Chrome de forma segura e moderna
+RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-chrome-archive-keyring.gpg \
+    && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome-archive-keyring.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list
+
+# Instala o Google Chrome e a lista completa de dependências necessárias para o Puppeteer
+RUN apt-get update && apt-get install -y \
+    google-chrome-stable \
     ca-certificates \
     fonts-liberation \
     libappindicator3-1 \
@@ -16,7 +27,6 @@ RUN apt-get update && apt-get install -y \
     libexpat1 \
     libfontconfig1 \
     libgbm1 \
-    libgcc1 \
     libgconf-2-4 \
     libgdk-pixbuf2.0-0 \
     libglib2.0-0 \
@@ -25,7 +35,6 @@ RUN apt-get update && apt-get install -y \
     libnss3 \
     libpango-1.0-0 \
     libpangocairo-1.0-0 \
-    libstdc++6 \
     libx11-6 \
     libx11-xcb1 \
     libxcb1 \
@@ -40,17 +49,14 @@ RUN apt-get update && apt-get install -y \
     libxss1 \
     libxtst6 \
     lsb-release \
-    wget \
     xdg-utils \
-    --no-install-recommends \
-    # Adiciona o Google Chrome para o Puppeteer
-    && wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
-    && sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list' \
-    && apt-get update \
-    && apt-get install -y google-chrome-stable
+    --no-install-recommends
 
-# Define o caminho correto para o executável do Chrome
-ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome
+# Limpa o cache do apt para reduzir o tamanho final da imagem
+RUN rm -rf /var/lib/apt/lists/*
+
+# Define o caminho correto para o executável do Chrome que foi instalado
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
 
 # Define o diretório de trabalho
 WORKDIR /usr/src/app
