@@ -29,42 +29,28 @@ const getUserById = async (id) => {
 };
 
 // --- Funções de Instâncias ---
-const addInstance = async (instanceData) => {
-    return await db.collection('instances').insertOne(instanceData);
-};
+const addInstance = async (instanceData) => await db.collection('instances').insertOne(instanceData);
 const updateInstance = async (instanceId, updates) => {
     if (!ObjectId.isValid(instanceId)) return null;
-    return await db.collection('instances').updateOne(
-        { _id: new ObjectId(instanceId) },
-        { $set: updates }
-    );
+    return await db.collection('instances').updateOne({ _id: new ObjectId(instanceId) }, { $set: updates });
 };
 const getInstanceById = async (instanceId) => {
     if (!ObjectId.isValid(instanceId)) return null;
     return await db.collection('instances').findOne({ _id: new ObjectId(instanceId) });
 };
-const getInstancesByOwner = async (ownerId) => {
-    return await db.collection('instances').find({ ownerId: ownerId }).toArray();
-};
+const getInstancesByOwner = async (ownerId) => await db.collection('instances').find({ ownerId: ownerId }).toArray();
 
 // --- Funções de Serviços (Fluxos de Conversa) ---
-const getServicesByOwner = async (ownerId) => {
-    return await db.collection('services').find({ ownerId: ownerId }).toArray();
-};
+const getServicesByOwner = async (ownerId) => await db.collection('services').find({ ownerId: ownerId }).toArray();
 const getServiceById = async (serviceId) => {
     if (!ObjectId.isValid(serviceId)) return null;
     return await db.collection('services').findOne({ _id: new ObjectId(serviceId) });
 };
-const addService = async (serviceData) => {
-    return await db.collection('services').insertOne(serviceData);
-};
+const addService = async (serviceData) => await db.collection('services').insertOne(serviceData);
 const updateService = async (serviceId, updates) => {
     if (!ObjectId.isValid(serviceId)) return null;
-    delete updates._id; 
-    return await db.collection('services').updateOne(
-        { _id: new ObjectId(serviceId) },
-        { $set: updates }
-    );
+    delete updates._id;
+    return await db.collection('services').updateOne({ _id: new ObjectId(serviceId) }, { $set: updates });
 };
 const deleteService = async (serviceId) => {
     if (!ObjectId.isValid(serviceId)) return null;
