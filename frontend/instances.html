@@ -1,145 +1,132 @@
-// Garante que o auth.js seja carregado primeiro e a página protegida
-protectPage(); 
+<!DOCTYPE html>
+<html lang="pt-BR" data-bs-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Conexões - Dplay Bot</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="css/style.css" rel="stylesheet">
+</head>
+<body>
+<div class="container-fluid">
+  <div class="row">
+    <!-- Sidebar -->
+    <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+      <div class="position-sticky sidebar-sticky">
+        <ul class="nav flex-column">
+          <li class="nav-item"><a class="nav-link" href="index.html">Dashboard</a></li>
+          <li class="nav-item"><a class="nav-link active" href="instances.html">Conexões</a></li>
+          <li class="nav-item"><a class="nav-link" href="conversations.html">Conversas</a></li>
+          <li class="nav-item"><a class="nav-link" href="leads.html">Leads</a></li>
+          <li class="nav-item"><a class="nav-link" href="services.html">Configurar Bot</a></li>
+          <li class="nav-item"><a class="nav-link" href="usuarios.html">Usuários</a></li>
+          <li class="nav-item mt-auto"><a class="nav-link" href="account.html">Minha Conta</a></li>
+          <li class="nav-item"><a class="nav-link" href="#" onclick="logout()">Logout</a></li>
+        </ul>
+      </div>
+    </nav>
 
-const token = localStorage.getItem('authToken');
-const createInstanceForm = document.getElementById('create-instance-form');
-const instanceNameInput = document.getElementById('instance-name-input');
-const instancesList = document.getElementById('instances-list');
-const qrCodeModal = new bootstrap.Modal(document.getElementById('qrCodeModal'));
-const qrCodeCanvas = document.getElementById('qr-code-canvas');
-const qrCodeContainer = document.getElementById('qr-code-container');
-const qrSpinner = document.getElementById('qr-spinner');
+    <!-- Main -->
+    <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+      <div class="page-header d-flex justify-content-between align-items-center my-3">
+        <h1>Conexões</h1>
+        <button class="btn btn-outline-light" onclick="loadConnections()">⟳ Atualizar</button>
+      </div>
 
-// --- CONEXÃO SOCKET.IO PARA TEMPO REAL ---
-// Conecta ao servidor de socket, enviando o token para autenticação
-const socket = io(BASE_URL, {
-    auth: { token }
-});
+      <div class="mb-4">
+        <button class="btn btn-success" onclick="addConnection()">➕ Nova Conexão</button>
+      </div>
 
-socket.on('connect', () => {
-    console.log('Conectado ao servidor de socket!', socket.id);
-});
+      <div class="table-responsive">
+        <table class="table table-dark table-striped">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Nome</th>
+              <th>Status</th>
+              <th>Última Atividade</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="connectionsTable">
+            <tr><td colspan="5" class="text-center">Carregando conexões...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+</div>
 
-// Ouve o evento 'qr_code' enviado pelo backend
-socket.on('qr_code', (data) => {
-    console.log('QR Code recebido!');
-    qrSpinner.style.display = 'none';
-    qrCodeContainer.style.display = 'inline-block';
-    // Usa a biblioteca QRious para desenhar o QR code no canvas
-    new QRious({
-        element: qrCodeCanvas,
-        value: data.qr,
-        size: 250,
-        padding: 10,
+<script src="js/auth.js"></script>
+<script>
+protectPage();
+
+async function loadConnections() {
+  const token = localStorage.getItem('authToken');
+  const table = document.getElementById('connectionsTable');
+  table.innerHTML = `<tr><td colspan="5" class="text-center">Carregando conexões...</td></tr>`;
+  try {
+    const res = await fetch('https://botdplay.onrender.com/api/connections', {
+      headers: { Authorization: `Bearer ${token}` }
     });
-});
-
-// Ouve o evento 'status_change' enviado pelo backend
-socket.on('status_change', (data) => {
-    console.log('O status da instância mudou:', data.status);
-    if (data.status === 'online') {
-        qrCodeModal.hide();
-        alert(`Instância "${data.instanceName}" conectada com sucesso!`);
+    const data = await res.json();
+    table.innerHTML = '';
+    if (data.length === 0) {
+      table.innerHTML = `<tr><td colspan="5" class="text-center">Nenhuma conexão encontrada.</td></tr>`;
+      return;
     }
-    // Recarrega a lista de instâncias para mostrar o novo status
-    loadInstances(); 
-});
-
-
-// --- LÓGICA DA PÁGINA ---
-
-// Função para carregar e exibir as instâncias do usuário
-async function loadInstances() {
-    try {
-        const response = await fetch(`${BASE_URL}/api/instances`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const instances = await response.json();
-        
-        instancesList.innerHTML = '';
-        if (instances.length === 0) {
-            instancesList.innerHTML = '<p class="text-muted">Nenhuma conexão encontrada. Crie uma acima!</p>';
-            return;
-        }
-
-        instances.forEach(instance => {
-            const statusClass = instance.status === 'online' ? 'text-success' : (instance.status === 'pending_qr' ? 'text-warning' : 'text-danger');
-            const statusText = (instance.status || 'offline').replace('_', ' ').replace(/^\w/, c => c.toUpperCase());
-            
-            const card = `
-                <div class="col-md-4 mb-3" id="instance-${instance._id}">
-                    <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-title">${instance.name}</h5>
-                            <p class="card-text mb-1">Número: ${instance.whatsappNumber || 'N/A'}</p>
-                            <p class="card-text">Status: <strong class="${statusClass}">${statusText}</strong></p>
-                            <button class="btn btn-danger btn-sm" onclick="disconnectInstance('${instance._id}')">Desconectar</button>
-                        </div>
-                    </div>
-                </div>
-            `;
-            instancesList.innerHTML += card;
-        });
-
-    } catch (error) {
-        console.error('Erro ao carregar instâncias:', error);
-        instancesList.innerHTML = '<p class="text-danger">Não foi possível carregar as conexões.</p>';
-    }
+    data.forEach(conn => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${conn._id}</td>
+        <td>${conn.name}</td>
+        <td class="${conn.online ? 'text-success' : 'text-danger'}">${conn.online ? 'Online' : 'Offline'}</td>
+        <td>${new Date(conn.lastActivity).toLocaleString()}</td>
+        <td>
+          <button class="btn btn-sm btn-primary" onclick="editConnection('${conn._id}')">✏️ Editar</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteConnection('${conn._id}')">🗑️ Excluir</button>
+        </td>
+      `;
+      table.appendChild(tr);
+    });
+  } catch(err) {
+    table.innerHTML = `<tr><td colspan="5" class="text-center text-danger">Erro ao carregar conexões.</td></tr>`;
+  }
 }
 
-// Evento de submit do formulário para criar uma nova instância
-createInstanceForm.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    const instanceName = instanceNameInput.value;
-
-    // Prepara o modal para receber o QR Code
-    qrCodeContainer.style.display = 'none';
-    qrSpinner.style.display = 'block';
-    qrCodeModal.show();
-
-    try {
-        const response = await fetch(`${BASE_URL}/api/instances/connect`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ instanceName })
-        });
-
-        if (!response.ok) {
-            qrCodeModal.hide();
-            const err = await response.json();
-            alert(`Erro: ${err.error || 'Falha ao iniciar a conexão.'}`);
-        }
-        // Se a resposta for OK, o backend foi notificado e agora apenas aguardamos o evento 'qr_code' do socket.
-    } catch (error) {
-        console.error('Erro ao criar instância:', error);
-        qrCodeModal.hide();
-        alert('Erro de comunicação ao criar instância.');
-    }
-});
-
-// Função para desconectar uma instância
-async function disconnectInstance(instanceId) {
-    if (!confirm('Tem certeza que deseja desconectar esta instância?')) return;
-    
-    try {
-        const response = await fetch(`${BASE_URL}/api/instances/${instanceId}/disconnect`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-
-        if (!response.ok) throw new Error('Falha ao desconectar.');
-        
-        alert('Instância desconectada com sucesso.');
-        loadInstances(); // Recarrega a lista para refletir a mudança
-    } catch (error) {
-        console.error('Erro ao desconectar:', error);
-        alert('Não foi possível desconectar a instância.');
-    }
+function addConnection() {
+  const name = prompt('Digite o nome da nova conexão:');
+  if (!name) return;
+  const token = localStorage.getItem('authToken');
+  fetch('https://botdplay.onrender.com/api/connections', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ name })
+  }).then(() => loadConnections());
 }
 
-// Carrega as instâncias salvas assim que a página é aberta
-document.addEventListener('DOMContentLoaded', loadInstances);
+function editConnection(id) {
+  const newName = prompt('Digite o novo nome da conexão:');
+  if (!newName) return;
+  const token = localStorage.getItem('authToken');
+  fetch(`https://botdplay.onrender.com/api/connections/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ name: newName })
+  }).then(() => loadConnections());
+}
 
+function deleteConnection(id) {
+  if (!confirm('Deseja realmente excluir esta conexão?')) return;
+  const token = localStorage.getItem('authToken');
+  fetch(`https://botdplay.onrender.com/api/connections/${id}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` }
+  }).then(() => loadConnections());
+}
+
+document.addEventListener('DOMContentLoaded', loadConnections);
+</script>
+</body>
+</html>
