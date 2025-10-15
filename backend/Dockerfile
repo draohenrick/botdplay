@@ -42,10 +42,15 @@ RUN apt-get update && apt-get install -y \
     lsb-release \
     wget \
     xdg-utils \
-    --no-install-recommends
+    --no-install-recommends \
+    # Adiciona o Google Chrome para o Puppeteer
+    && wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
+    && sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list' \
+    && apt-get update \
+    && apt-get install -y google-chrome-stable
 
-# Define o caminho do executável do Chrome para o Puppeteer
-ENV PUPPETEER_EXECUTABLE_PATH=/opt/google/chrome/chrome
+# Define o caminho correto para o executável do Chrome
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome
 
 # Define o diretório de trabalho
 WORKDIR /usr/src/app
@@ -53,7 +58,7 @@ WORKDIR /usr/src/app
 # Copia os arquivos de pacote
 COPY package*.json ./
 
-# Instala as dependências de produção.
+# Instala as dependências de produção
 RUN npm install --omit=dev
 
 # Copia o resto do código do projeto
@@ -61,3 +66,4 @@ COPY . .
 
 # Comando para iniciar a aplicação
 CMD [ "node", "server.js" ]
+
