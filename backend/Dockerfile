@@ -1,23 +1,11 @@
 # Usa uma imagem base mais completa que a 'alpine'
 FROM node:18-slim
 
-# Instala o Git e dependências essenciais para adicionar novos repositórios de pacotes
+# Instala o Git e a lista completa de dependências necessárias para o Puppeteer
 RUN apt-get update && apt-get install -y \
     git \
     wget \
-    gnupg \
     ca-certificates \
-    --no-install-recommends
-
-# Adiciona o repositório do Google Chrome de forma segura e moderna
-RUN wget -q https://dl-ssl.google.com/linux/linux_signing_key.pub -O /tmp/google.pub \
-    && gpg --dearmor /tmp/google.pub -o /usr/share/keyrings/google-chrome-archive-keyring.gpg \
-    && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome-archive-keyring.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list \
-    && rm /tmp/google.pub
-
-# Instala o Google Chrome e a lista completa de dependências necessárias para o Puppeteer
-RUN apt-get update && apt-get install -y \
-    google-chrome-stable \
     fonts-liberation \
     libappindicator3-1 \
     libasound2 \
@@ -54,8 +42,15 @@ RUN apt-get update && apt-get install -y \
     xdg-utils \
     --no-install-recommends
 
-# Limpa o cache do apt para reduzir o tamanho final da imagem
-RUN rm -rf /var/lib/apt/lists/*
+# NOVA ABORDAGEM: Baixa o pacote do Google Chrome diretamente
+RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+
+# Instala o pacote baixado e corrige quaisquer dependências faltantes
+RUN dpkg -i google-chrome-stable_current_amd64.deb || apt-get install -f -y
+
+# Limpa o cache do apt e o arquivo baixado para reduzir o tamanho da imagem
+RUN rm -rf /var/lib/apt/lists/* \
+    && rm google-chrome-stable_current_amd64.deb
 
 # Define o caminho correto para o executável do Chrome que foi instalado
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
