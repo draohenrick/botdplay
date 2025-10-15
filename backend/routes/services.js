@@ -19,10 +19,11 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
     try {
         const serviceData = req.body;
-        serviceData.ownerId = req.user.id; // Adiciona o ID do dono do serviço
+        // Adiciona o ID do dono do serviço, que vem do token de autenticação
+        serviceData.ownerId = req.user.id; 
 
         const result = await db.addService(serviceData);
-        // MongoDB v5+ retorna um objeto com insertedId, vamos retornar o documento inserido
+        // Busca o serviço recém-criado para retornar o objeto completo
         const newService = await db.getServiceById(result.insertedId);
         res.status(201).json(newService);
     } catch (error) {
@@ -37,6 +38,7 @@ router.delete('/:id', async (req, res) => {
     try {
         const serviceId = req.params.id;
 
+        // Garante que o usuário só possa deletar seus próprios serviços
         const existingService = await db.getServiceById(serviceId);
         if (!existingService || existingService.ownerId !== req.user.id) {
             return res.status(404).json({ error: "Serviço não encontrado ou não pertence a você." });
@@ -50,4 +52,11 @@ router.delete('/:id', async (req, res) => {
     }
 });
 
+// ROTA PARA ATUALIZAR UM SERVIÇO (funcionalidade futura)
+router.put('/:id', async (req, res) => {
+    // A lógica de atualização viria aqui
+    res.status(501).json({ message: "Funcionalidade de editar ainda não implementada." });
+});
+
 module.exports = router;
+
