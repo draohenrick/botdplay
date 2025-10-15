@@ -1,27 +1,65 @@
-# NOVA ABORDAGEM: Usa uma imagem oficial pré-construída que já contém o Puppeteer e o Chrome.
-# Isso elimina a necessidade de instalar manualmente o Chrome e suas dependências.
-FROM ghcr.io/puppeteer/puppeteer:22.10.0
+# Usa a imagem base leve do Node.js
+FROM node:18-slim
 
-# O Puppeteer já vem instalado. Agora, instalamos o Git que é necessário para o whatsapp-web.js.
-# O usuário 'pptruser' já existe nesta imagem, então mudamos para o root para instalar pacotes.
-USER root
-RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
+# Define variáveis de ambiente para evitar prompts interativos durante a instalação
+ENV DEBIAN_FRONTEND=noninteractive
 
-# Volta para o usuário padrão não-root para mais segurança.
-USER pptruser
+# Instala o Git e as dependências essenciais para o Puppeteer de forma otimizada
+RUN apt-get update \
+    && apt-get install -y \
+    git \
+    # Dependências do Chrome/Puppeteer
+    ca-certificates \
+    fonts-liberation \
+    libasound2 \
+    libatk-bridge2.0-0 \
+    libatk1.0-0 \
+    libcairo2 \
+    libcups2 \
+    libdbus-1-3 \
+    libexpat1 \
+    libfontconfig1 \
+    libgbm1 \
+    libgconf-2-4 \
+    libgdk-pixbuf2.0-0 \
+    libglib2.0-0 \
+    libgtk-3-0 \
+    libnspr4 \
+    libnss3 \
+    libpango-1.0-0 \
+    libpangocairo-1.0-0 \
+    libx11-6 \
+    libx11-xcb1 \
+    libxcb1 \
+    libxcomposite1 \
+    libxcursor1 \
+    libxdamage1 \
+    libxext6 \
+    libxfixes3 \
+    libxi6 \
+    libxrandr2 \
+    libxrender1 \
+    libxss1 \
+    libxtst6 \
+    lsb-release \
+    wget \
+    xdg-utils \
+    --no-install-recommends \
+    # Limpa o cache do apt no final para reduzir o tamanho da imagem
+    && rm -rf /var/lib/apt/lists/*
 
-# Define o diretório de trabalho dentro da pasta home do usuário pptruser.
-WORKDIR /home/pptruser/app
+# Define o diretório de trabalho
+WORKDIR /usr/src/app
 
-# Copia os arquivos de pacote para o diretório de trabalho.
-COPY --chown=pptruser:pptruser package*.json ./
+# Copia os arquivos de pacote
+COPY package*.json ./
 
-# Instala apenas as dependências de produção do seu projeto.
+# Instala as dependências de produção
 RUN npm install --omit=dev
 
-# Copia o resto do código do seu projeto.
-COPY --chown=pptruser:pptruser . .
+# Copia o resto do código do projeto
+COPY . .
 
-# Comando para iniciar a aplicação.
+# Comando para iniciar a aplicação
 CMD [ "node", "server.js" ]
 
