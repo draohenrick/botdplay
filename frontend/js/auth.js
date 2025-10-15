@@ -1,19 +1,16 @@
-// Define a URL base do seu backend
-const BASE_URL = 'https://botdplay.onrender.com';
-
-// Função para proteger a página
+// --- Proteção de páginas ---
 function protectPage() {
-    const token = localStorage.getItem('authToken');
-    if (!token) {
-        // Se não houver token, o usuário não está logado. Redireciona para o login.
-        window.location.href = '/login.html';
-    }
+  const token = localStorage.getItem('authToken');
+  if (!token) {
+    window.location.href = '/login.html';
+    return;
+  }
+  // Opcional: validar token com backend
 }
 
-// Função de Logout
+// --- Logout ---
 function logout() {
-    // Limpa o token e redireciona para o login
-    localStorage.removeItem('authToken');
-    alert('Você saiu com sucesso.');
-    window.location.href = '/login.html';
+  localStorage.removeItem('authToken');
+  localStorage.removeItem('user');
+  window.location.href = '/login.html';
 }
