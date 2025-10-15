@@ -19,34 +19,14 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
     try {
         const serviceData = req.body;
-        // Adiciona o ID do dono do serviço, que vem do token de autenticação
-        serviceData.ownerId = req.user.id; 
+        serviceData.ownerId = req.user.id; // Adiciona o ID do dono do serviço
 
-        const newService = await db.addService(serviceData);
+        const result = await db.addService(serviceData);
+        // MongoDB v5+ retorna um objeto com insertedId, vamos retornar o documento inserido
+        const newService = await db.getServiceById(result.insertedId);
         res.status(201).json(newService);
     } catch (error) {
         console.error("Erro ao criar serviço:", error);
-        res.status(500).json({ error: "Erro interno do servidor." });
-    }
-});
-
-// ROTA PARA ATUALIZAR UM SERVIÇO
-// PUT /api/services/:id
-router.put('/:id', async (req, res) => {
-    try {
-        const serviceId = req.params.id;
-        const updates = req.body;
-        
-        // Garante que o usuário só possa editar seus próprios serviços
-        const existingService = await db.getServiceById(serviceId);
-        if (!existingService || existingService.ownerId !== req.user.id) {
-            return res.status(404).json({ error: "Serviço não encontrado ou não pertence a você." });
-        }
-        
-        const updatedService = await db.updateService(serviceId, updates);
-        res.json(updatedService);
-    } catch (error) {
-        console.error("Erro ao atualizar serviço:", error);
         res.status(500).json({ error: "Erro interno do servidor." });
     }
 });
@@ -57,7 +37,6 @@ router.delete('/:id', async (req, res) => {
     try {
         const serviceId = req.params.id;
 
-        // Garante que o usuário só possa deletar seus próprios serviços
         const existingService = await db.getServiceById(serviceId);
         if (!existingService || existingService.ownerId !== req.user.id) {
             return res.status(404).json({ error: "Serviço não encontrado ou não pertence a você." });
