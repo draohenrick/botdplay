@@ -1,53 +1,122 @@
 const express = require('express');
-const db = require('../db');
-const router = express.Router();
+const http = require('http');
+const { Server } = require("socket.io");
+const cors = require('cors');
+const bodyParser = require('body-parser');
+const jwt = require('jsonwebtoken');
 
-// ROTA PARA LISTAR TODOS OS SERVIÇOS DO USUÁRIO LOGADO
-// GET /api/services
-router.get('/', async (req, res) => {
+// Módulos locais
+const db = require('./db');
+const authMiddleware = require('./middleware/authMiddleware');
+const authRoutes = require('./routes/auth');
+const serviceRoutes = require('./routes/services');
+const BotInstance = require('./BotInstance');
+
+const app = express();
+const server = http.createServer(app);
+const io = new Server(server, { cors: { origin: "*" } });
+
+const PORT = process.env.PORT || 3001;
+const JWT_SECRET = process.env.JWT_SECRET;
+
+// Middlewares globais
+app.use(cors());
+app.use(bodyParser.json());
+
+const activeInstances = new Map();
+
+// Lógica do Socket.IO para autenticação
+io.on('connection', (socket) => {
     try {
-        const services = await db.getServicesByOwner(req.user.id);
-        res.json(services);
+        const token = socket.handshake.auth.token;
+        const decoded = jwt.verify(token, JWT_SECRET);
+        if (decoded && decoded.id) {
+            socket.join(decoded.id);
+            console.log(`Socket ${socket.id} entrou na sala do usuário ${decoded.id}`);
+        }
     } catch (error) {
-        console.error("Erro ao buscar serviços:", error);
-        res.status(500).json({ error: "Erro interno do servidor." });
+        console.error("Falha na autenticação do socket:", error.message);
+        socket.disconnect();
     }
 });
 
-// ROTA PARA CRIAR UM NOVO SERVIÇO
-// POST /api/services
-router.post('/', async (req, res) => {
-    try {
-        const serviceData = req.body;
-        serviceData.ownerId = req.user.id; // Adiciona o ID do dono do serviço
+// --- ROTAS PÚBLICAS ---
+app.use('/api/auth', authRoutes);
 
-        const result = await db.addService(serviceData);
-        // MongoDB v5+ retorna um objeto com insertedId, vamos retornar o documento inserido
-        const newService = await db.getServiceById(result.insertedId);
-        res.status(201).json(newService);
+// --- PROTEÇÃO ---
+app.use(authMiddleware);
+
+// --- ROTAS PROTEGIDAS ---
+app.use('/api/services', serviceRoutes);
+
+app.get('/api/instances', async (req, res) => {
+    try {
+        const instances = await db.getInstancesByOwner(req.user.id);
+        res.json(instances);
     } catch (error) {
-        console.error("Erro ao criar serviço:", error);
-        res.status(500).json({ error: "Erro interno do servidor." });
+        res.status(500).json({ error: "Erro ao buscar instâncias." });
     }
 });
 
-// ROTA PARA DELETAR UM SERVIÇO
-// DELETE /api/services/:id
-router.delete('/:id', async (req, res) => {
-    try {
-        const serviceId = req.params.id;
+app.post('/api/instances/connect', async (req, res) => {
+    const { instanceName } = req.body;
+    const ownerId = req.user.id; 
 
-        const existingService = await db.getServiceById(serviceId);
-        if (!existingService || existingService.ownerId !== req.user.id) {
-            return res.status(404).json({ error: "Serviço não encontrado ou não pertence a você." });
+    try {
+        const newInstanceData = { name: instanceName, ownerId, status: 'pending' };
+        const newInstance = await db.addInstance(newInstanceData);
+        const instanceId = newInstance.insertedId.toString();
+
+        if (activeInstances.has(instanceId)) { activeInstances.get(instanceId).stop(); }
+
+        const bot = new BotInstance({ id: instanceId, ownerId, name: instanceName }, io);
+        activeInstances.set(instanceId, bot);
+
+        bot.initialize().catch(err => {
+            console.error(`Falha ao inicializar instância ${instanceId}:`, err);
+            activeInstances.delete(instanceId);
+            db.updateInstance(instanceId, { status: 'error' });
+        });
+        res.status(201).json({ instanceId });
+    } catch (error) {
+        res.status(500).json({ error: "Erro ao criar instância." });
+    }
+});
+
+app.post('/api/instances/:id/disconnect', async (req, res) => {
+    const { id } = req.params;
+    const ownerId = req.user.id;
+
+    try {
+        const instance = await db.getInstanceById(id);
+        if (!instance || instance.ownerId !== ownerId) {
+            return res.status(404).json({ error: "Instância não encontrada." });
         }
 
-        await db.deleteService(serviceId);
-        res.status(200).json({ message: 'Serviço deletado com sucesso.' });
-    } catch (error) {
-        console.error("Erro ao deletar serviço:", error);
-        res.status(500).json({ error: "Erro interno do servidor." });
+        if (activeInstances.has(id)) {
+            await activeInstances.get(id).stop();
+            activeInstances.delete(id);
+        }
+
+        await db.updateInstance(id, { status: 'offline' });
+        res.json({ message: "Instância desconectada." });
+    } catch(error) {
+        res.status(500).json({ error: "Erro ao desconectar instância." });
     }
 });
 
-module.exports = router;
+// --- INICIALIZAÇÃO DO SERVIDOR ---
+const startServer = async () => {
+    try {
+        await db.connectToDatabase();
+        server.listen(PORT, () => {
+            console.log(`🚀 Servidor rodando na porta ${PORT}`);
+        });
+    } catch (error) {
+        console.error("❌ Falha crítica ao iniciar o servidor:", error);
+        process.exit(1);
+    }
+};
+
+startServer();
+
