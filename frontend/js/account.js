@@ -1,37 +1,57 @@
-async function updateAccount(e) {
-    e.preventDefault();
-    const token = localStorage.getItem('authToken');
-    if (!token) return;
+const accountName = document.getElementById('accountName');
+const accountEmail = document.getElementById('accountEmail');
 
-    const submitBtn = accountForm.querySelector('button[type="submit"]');
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Salvando...';
+async function loadAccount() {
+    const token = localStorage.getItem('token');
+    if(!token) return window.location.href='index.html';
 
     try {
-        const response = await fetch(`${BACKEND_URL}/api/account`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ nome: nameField.value })
+        const res = await fetch(`${BACKEND_URL}/api/account`,{
+            headers: {'Authorization': `Bearer ${token}`}
         });
-
-        if (response.status === 401 || response.status === 403) {
-            localStorage.removeItem('authToken');
-            alert('Sua sessão expirou. Faça login novamente.');
-            window.location.href = '/login.html';
-            return;
+        const data = await res.json();
+        if(data.success){
+            accountName.value = data.user.name;
+            accountEmail.value = data.user.email;
+        } else {
+            logout();
         }
-
-        const result = await response.json();
-        alert(result.message || 'Dados atualizados com sucesso.');
-
-    } catch (error) {
-        console.error('Erro ao atualizar conta:', error);
-        alert('Erro ao atualizar seus dados. Tente novamente.');
-    } finally {
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Salvar Alterações';
+    } catch(err){
+        console.error(err);
+        alert('Erro ao carregar dados da conta');
     }
 }
+
+document.getElementById('updateProfileBtn')?.addEventListener('click', async()=>{
+    const token = localStorage.getItem('token');
+    const name = accountName.value;
+
+    try{
+        const res = await fetch(`${BACKEND_URL}/api/account`,{
+            method:'PUT',
+            headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+            body:JSON.stringify({name})
+        });
+        const data = await res.json();
+        if(data.success) alert('Perfil atualizado');
+    }catch(err){console.error(err);}
+});
+
+document.getElementById('changePasswordBtn')?.addEventListener('click', async()=>{
+    const token = localStorage.getItem('token');
+    const currentPassword = document.getElementById('currentPassword').value;
+    const newPassword = document.getElementById('newPassword').value;
+
+    try{
+        const res = await fetch(`${BACKEND_URL}/api/account/password`,{
+            method:'PUT',
+            headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+            body:JSON.stringify({currentPassword,newPassword})
+        });
+        const data = await res.json();
+        if(data.success) alert('Senha alterada com sucesso');
+        else alert(data.message);
+    }catch(err){console.error(err);}
+});
+
+document.addEventListener('DOMContentLoaded', loadAccount);
