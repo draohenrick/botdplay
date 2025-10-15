@@ -51,6 +51,25 @@ const getInstancesByOwner = async (ownerId) => {
 const getServicesByOwner = async (ownerId) => {
     return await db.collection('services').find({ ownerId: ownerId }).toArray();
 };
+const getServiceById = async (serviceId) => {
+    if (!ObjectId.isValid(serviceId)) return null;
+    return await db.collection('services').findOne({ _id: new ObjectId(serviceId) });
+};
+const addService = async (serviceData) => {
+    return await db.collection('services').insertOne(serviceData);
+};
+const updateService = async (serviceId, updates) => {
+    if (!ObjectId.isValid(serviceId)) return null;
+    delete updates._id; 
+    return await db.collection('services').updateOne(
+        { _id: new ObjectId(serviceId) },
+        { $set: updates }
+    );
+};
+const deleteService = async (serviceId) => {
+    if (!ObjectId.isValid(serviceId)) return null;
+    return await db.collection('services').deleteOne({ _id: new ObjectId(serviceId) });
+};
 
 // Exporta todas as funções
 module.exports = {
@@ -63,5 +82,9 @@ module.exports = {
     getInstanceById,
     getInstancesByOwner,
     getServicesByOwner,
+    getServiceById,
+    addService,
+    updateService,
+    deleteService,
 };
 
