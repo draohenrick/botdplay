@@ -20,9 +20,15 @@ const connectToDatabase = async () => {
     }
 };
 
-// --- Funções de Usuários ---
+// --- Funções de Utilizadores ---
 const getUserByEmail = async (email) => await db.collection('users').findOne({ email });
-const addUser = async (userData) => await db.collection('users').insertOne(userData);
+const getUserById = async (id) => {
+    if (!ObjectId.isValid(id)) return null;
+    return await db.collection('users').findOne({ _id: new ObjectId(id) });
+};
+const addUser = async (userData) => {
+    return await db.collection('users').insertOne(userData);
+};
 
 // --- Funções de Instâncias ---
 const addInstance = async (instanceData) => {
@@ -30,7 +36,10 @@ const addInstance = async (instanceData) => {
 };
 const updateInstance = async (instanceId, updates) => {
     if (!ObjectId.isValid(instanceId)) return null;
-    return await db.collection('instances').updateOne({ _id: new ObjectId(instanceId) }, { $set: updates });
+    return await db.collection('instances').updateOne(
+        { _id: new ObjectId(instanceId) },
+        { $set: updates }
+    );
 };
 const getInstanceById = async (instanceId) => {
     if (!ObjectId.isValid(instanceId)) return null;
@@ -40,19 +49,45 @@ const getInstancesByOwner = async (ownerId) => {
     return await db.collection('instances').find({ ownerId: ownerId }).toArray();
 };
 
-// --- Funções de Serviços (Fluxos) ---
+// --- Funções de Serviços (Fluxos de Conversa) ---
 const getServicesByOwner = async (ownerId) => {
     return await db.collection('services').find({ ownerId: ownerId }).toArray();
 };
+const getServiceById = async (serviceId) => {
+    if (!ObjectId.isValid(serviceId)) return null;
+    return await db.collection('services').findOne({ _id: new ObjectId(serviceId) });
+};
+const addService = async (serviceData) => {
+    return await db.collection('services').insertOne(serviceData);
+};
+const updateService = async (serviceId, updates) => {
+    if (!ObjectId.isValid(serviceId)) return null;
+    delete updates._id; // Garante que o _id não seja modificado
+    return await db.collection('services').updateOne(
+        { _id: new ObjectId(serviceId) },
+        { $set: updates }
+    );
+};
+const deleteService = async (serviceId) => {
+    if (!ObjectId.isValid(serviceId)) return null;
+    return await db.collection('services').deleteOne({ _id: new ObjectId(serviceId) });
+};
 
+
+// Exporta todas as funções que usamos no projeto
 module.exports = {
     connectToDatabase,
     getUserByEmail,
+    getUserById,
     addUser,
     addInstance,
     updateInstance,
     getInstanceById,
     getInstancesByOwner,
-    getServicesByOwner
+    getServicesByOwner,
+    getServiceById,
+    addService,
+    updateService,
+    deleteService,
 };
 
