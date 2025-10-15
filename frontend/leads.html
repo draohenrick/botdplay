@@ -10,77 +10,77 @@
 </head>
 <body>
     <div class="container-fluid">
-      <div class="row">
-        <!-- Sidebar -->
-        <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse">
-            <div class="position-sticky sidebar-sticky">
-                <div class="text-center my-4">
-                    <h6 class="sidebar-heading px-3 text-dark"><span>Dplay Bot</span></h6>
+        <div class="row">
+            <!-- Sidebar -->
+            <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+                <div class="position-sticky sidebar-sticky">
+                    <div class="text-center my-4">
+                        <h6 class="sidebar-heading px-3 text-dark"><span>Dplay Bot</span></h6>
+                    </div>
+                    <ul class="nav flex-column">
+                        <li class="nav-item"><a class="nav-link" href="index.html">Dashboard</a></li>
+                        <li class="nav-item"><a class="nav-link" href="instances.html">Conexões</a></li>
+                        <li class="nav-item"><a class="nav-link" href="conversations.html">Conversas</a></li>
+                        <li class="nav-item"><a class="nav-link active" href="leads.html">Leads</a></li>
+                        <li class="nav-item"><a class="nav-link" href="services.html">Configurar Bot</a></li>
+                        <li class="nav-item"><a class="nav-link" href="usuarios.html">Usuários</a></li>
+                        <li class="nav-item mt-auto"><a class="nav-link" href="account.html">Minha Conta</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#" onclick="logout()">Logout</a></li>
+                    </ul>
                 </div>
-                <ul class="nav flex-column">
-                    <li class="nav-item"><a class="nav-link" href="index.html">Dashboard</a></li>
-                    <li class="nav-item"><a class="nav-link" href="instances.html">Conexões</a></li>
-                    <li class="nav-item"><a class="nav-link" href="conversations.html">Conversas</a></li>
-                    <li class="nav-item"><a class="nav-link active" href="leads.html">Leads</a></li>
-                    <li class="nav-item"><a class="nav-link" href="services.html">Configurar Bot</a></li>
-                    <li class="nav-item"><a class="nav-link" href="usuarios.html">Usuários</a></li>
-                    <li class="nav-item mt-auto"><a class="nav-link" href="account.html">Minha Conta</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#" onclick="logout()">Logout</a></li>
-                </ul>
-            </div>
-        </nav>
+            </nav>
 
-        <!-- Conteúdo principal -->
-        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-            <div class="page-header d-flex justify-content-between align-items-center my-3">
-                <h1>Leads</h1>
-                <div class="d-flex gap-2">
-                    <button class="btn btn-outline-light btn-sm" id="refresh-leads">🔄 Atualizar</button>
-                    <button class="btn btn-success btn-sm" id="export-csv">📁 Exportar CSV</button>
-                </div>
-            </div>
-            
-            <p>Aqui você irá visualizar todos os leads capturados.</p>
-
-            <!-- Filtros -->
-            <div class="card mb-3">
-                <div class="card-body d-flex flex-wrap gap-2 align-items-center">
-                    <input type="text" id="search-lead" class="form-control form-control-sm w-auto" placeholder="Buscar por nome, e-mail ou telefone...">
-                    <select id="status-filter" class="form-select form-select-sm w-auto">
-                        <option value="all">Todos os Status</option>
-                        <option value="new">Novo</option>
-                        <option value="in_progress">Em negociação</option>
-                        <option value="converted">Convertido</option>
-                        <option value="lost">Perdido</option>
-                    </select>
-                </div>
-            </div>
-
-            <!-- Lista de Leads -->
-            <div class="card">
-                <div class="card-body">
-                    <div id="leads-container" class="list-group">
-                        <div class="text-center text-muted py-3">Carregando leads...</div>
+            <!-- Conteúdo principal -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="page-header d-flex justify-content-between align-items-center my-3">
+                    <h1>Leads</h1>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-outline-light btn-sm" id="refresh-leads">🔄 Atualizar</button>
+                        <button class="btn btn-success btn-sm" id="export-csv">📁 Exportar CSV</button>
                     </div>
                 </div>
-            </div>
-        </main>
-      </div>
+                
+                <p>Aqui você irá visualizar todos os leads capturados.</p>
+
+                <!-- Filtros -->
+                <div class="card mb-3">
+                    <div class="card-body d-flex flex-wrap gap-2 align-items-center">
+                        <input type="text" id="search-lead" class="form-control form-control-sm w-auto" placeholder="Buscar por nome, e-mail ou telefone...">
+                        <select id="status-filter" class="form-select form-select-sm w-auto">
+                            <option value="all">Todos os Status</option>
+                            <option value="new">Novo</option>
+                            <option value="in_progress">Em negociação</option>
+                            <option value="converted">Convertido</option>
+                            <option value="lost">Perdido</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Lista de Leads -->
+                <div class="card">
+                    <div class="card-body">
+                        <div id="leads-container" class="list-group">
+                            <div class="text-center text-muted py-3">Carregando leads...</div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
     </div>
 
     <!-- Modal Detalhes do Lead -->
     <div class="modal fade" id="leadModal" tabindex="-1" aria-labelledby="leadModalLabel" aria-hidden="true">
-      <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content bg-dark text-light">
-          <div class="modal-header">
-            <h5 class="modal-title" id="leadModalLabel">Detalhes do Lead</h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body" id="lead-details">
-            <p>Carregando informações...</p>
-          </div>
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content bg-dark text-light">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="leadModalLabel">Detalhes do Lead</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="lead-details">
+                    <p>Carregando informações...</p>
+                </div>
+            </div>
         </div>
-      </div>
     </div>
 
     <!-- Scripts -->
@@ -101,27 +101,33 @@
         refreshBtn.addEventListener('click', loadLeads);
         exportBtn.addEventListener('click', exportLeadsToCSV);
 
+        // Mock de leads (substituir pela API real)
+        const mockLeads = [
+            { name: "João Silva", email: "joao@email.com", phone: "(11) 99999-9999", status: "new", origin: "Site", notes: "Solicitou contato via formulário" },
+            { name: "Maria Oliveira", email: "maria@email.com", phone: "(21) 98888-8888", status: "converted", origin: "Instagram", notes: "Fechou contrato em 10/10" }
+        ];
+
         function loadLeads() {
-            leadsContainer.innerHTML = `
-                <a href="#" class="list-group-item list-group-item-action bg-dark text-light lead-item" 
-                    data-name="João Silva" data-email="joao@email.com" data-phone="(11) 99999-9999"
-                    data-status="new" data-origin="Site" data-notes="Solicitou contato via formulário"
-                    onclick="openLead(this)">
-                    🧩 <strong>João Silva</strong> - Novo lead
-                </a>
-                <a href="#" class="list-group-item list-group-item-action bg-dark text-light lead-item" 
-                    data-name="Maria Oliveira" data-email="maria@email.com" data-phone="(21) 98888-8888"
-                    data-status="converted" data-origin="Instagram" data-notes="Fechou contrato em 10/10"
-                    onclick="openLead(this)">
-                    ✅ <strong>Maria Oliveira</strong> - Convertido
-                </a>
-            `;
+            leadsContainer.innerHTML = '';
+            mockLeads.forEach(lead => {
+                const a = document.createElement('a');
+                a.href = "#";
+                a.className = "list-group-item list-group-item-action bg-dark text-light lead-item";
+                a.dataset.name = lead.name;
+                a.dataset.email = lead.email;
+                a.dataset.phone = lead.phone;
+                a.dataset.status = lead.status;
+                a.dataset.origin = lead.origin;
+                a.dataset.notes = lead.notes;
+                a.innerHTML = `${lead.status === 'converted' ? '✅' : '🧩'} <strong>${lead.name}</strong> - ${formatStatus(lead.status)}`;
+                a.onclick = () => openLead(a);
+                leadsContainer.appendChild(a);
+            });
         }
 
         function openLead(el) {
             const modal = new bootstrap.Modal(document.getElementById('leadModal'));
             const details = document.getElementById('lead-details');
-
             details.innerHTML = `
                 <h5>${el.dataset.name}</h5>
                 <p><strong>E-mail:</strong> ${el.dataset.email}</p>
