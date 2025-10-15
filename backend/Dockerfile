@@ -44,7 +44,7 @@ RUN apt-get update && apt-get install -y \
     xdg-utils \
     --no-install-recommends
 
-# CORREÇÃO: Define o caminho correto para o executável do Chrome
+# Define o caminho do executável do Chrome para o Puppeteer
 ENV PUPPETEER_EXECUTABLE_PATH=/opt/google/chrome/chrome
 
 # Define o diretório de trabalho
@@ -53,7 +53,7 @@ WORKDIR /usr/src/app
 # Copia os arquivos de pacote
 COPY package*.json ./
 
-# Instala as dependências de produção
+# Instala as dependências de produção.
 RUN npm install --omit=dev
 
 # Copia o resto do código do projeto
