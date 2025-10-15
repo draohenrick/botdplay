@@ -12,10 +12,10 @@ function authMiddleware(req, res, next) {
 
     try {
         const decoded = jwt.verify(token, JWT_SECRET);
-        req.user = decoded; // Adiciona os dados do usuário (id, email, nome) ao objeto 'req'
-        next(); // Continua para a próxima rota
+        req.user = decoded;
+        next();
     } catch (error) {
-        res.status(403).json({ error: 'Token inválido ou expirado.' });
+        return res.status(403).json({ error: 'Token inválido ou expirado.' });
     }
 }
 
