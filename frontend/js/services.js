@@ -1,107 +1,107 @@
-// Protege a página e define a URL base
-protectPage(); 
-
-const token = localStorage.getItem('authToken');
 const servicesTableBody = document.getElementById('servicesTableBody');
 const newServiceForm = document.getElementById('newServiceForm');
-const addServiceModal = new bootstrap.Modal(document.getElementById('addServiceModal'));
 
-/**
- * Carrega os serviços do backend e os exibe na tabela.
- */
 async function loadServices() {
-    servicesTableBody.innerHTML = '<tr><td colspan="4" class="text-center">Carregando fluxos...</td></tr>';
+    const token = localStorage.getItem('token');
+    if (!token) return window.location.href='index.html';
+
     try {
-        const response = await fetch(`${BASE_URL}/api/services`, {
-            headers: { 'Authorization': `Bearer ${token}` }
+        const res = await fetch(`${BACKEND_URL}/api/services`,{
+            headers: {'Authorization': `Bearer ${token}`}
         });
-        if (!response.ok) throw new Error('Falha ao carregar os fluxos.');
-        const services = await response.json();
-        renderServices(services);
-    } catch (error) {
-        console.error('Erro:', error);
-        servicesTableBody.innerHTML = `<tr><td colspan="4" class="text-center text-danger">${error.message}</td></tr>`;
-    }
+        const data = await res.json();
+        if(data.success){
+            renderServices(data.services);
+        }
+    } catch(err){ console.error(err); }
 }
 
-/**
- * Renderiza os serviços na tabela.
- */
-function renderServices(services) {
-    if (services.length === 0) {
-        servicesTableBody.innerHTML = '<tr><td colspan="4" class="text-center">Nenhum fluxo cadastrado. Clique em "+ Novo Fluxo" para começar.</td></tr>';
+function renderServices(services){
+    servicesTableBody.innerHTML = '';
+    if(!services.length){
+        servicesTableBody.innerHTML = `<tr><td colspan="4" class="text-center">Nenhum fluxo cadastrado</td></tr>`;
         return;
     }
-    servicesTableBody.innerHTML = '';
-    services.forEach(service => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td><strong>${service.label}</strong></td>
+
+    services.forEach(service=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${service.label}</td>
             <td>${service.description}</td>
-            <td><span class="badge bg-secondary">${(service.keywords || []).join(', ')}</span></td>
+            <td>${service.keywords.join(', ')}</td>
             <td>
-                <button class="btn btn-sm btn-outline-danger" onclick="deleteService('${service._id}')">Excluir</button>
+                <button class="btn btn-sm btn-warning" onclick="editService('${service._id}')">✏️ Editar</button>
+                <button class="btn btn-sm btn-danger" onclick="deleteService('${service._id}')">🗑️ Excluir</button>
             </td>
         `;
-        servicesTableBody.appendChild(row);
+        servicesTableBody.appendChild(tr);
     });
 }
 
-/**
- * Lida com o envio do formulário para criar um novo serviço.
- */
-newServiceForm.addEventListener('submit', async (event) => {
-    event.preventDefault();
+// Criar novo fluxo
+newServiceForm?.addEventListener('submit', async(e)=>{
+    e.preventDefault();
+    const token = localStorage.getItem('token');
+    const label = document.getElementById('serviceLabel').value;
+    const description = document.getElementById('serviceDescription').value;
+    const keywords = document.getElementById('serviceKeywords').value.split(',').map(k=>k.trim());
 
-    const serviceData = {
-        label: document.getElementById('serviceLabel').value,
-        description: document.getElementById('serviceDescription').value,
-        keywords: document.getElementById('serviceKeywords').value.split(',').map(kw => kw.trim()).filter(kw => kw),
-    };
-    
-    if (!serviceData.label || !serviceData.description) {
-        alert('Nome do Fluxo e Descrição são obrigatórios.');
-        return;
-    }
-
-    try {
-        const response = await fetch(`${BASE_URL}/api/services`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify(serviceData)
+    try{
+        const res = await fetch(`${BACKEND_URL}/api/services`,{
+            method:'POST',
+            headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+            body: JSON.stringify({label,description,keywords})
         });
-        if (!response.ok) throw new Error('Falha ao salvar o novo fluxo.');
-        
-        newServiceForm.reset();
-        addServiceModal.hide();
-        loadServices(); // Recarrega a lista para mostrar o novo item
-    } catch (error) {
-        console.error('Erro ao salvar:', error);
-        alert(error.message);
-    }
+        const data = await res.json();
+        if(data.success){
+            alert('Fluxo criado com sucesso');
+            loadServices();
+            new bootstrap.Modal(document.getElementById('addServiceModal')).hide();
+            newServiceForm.reset();
+        } else alert(data.message);
+    }catch(err){console.error(err);}
 });
 
-/**
- * Função para deletar um serviço.
- */
-async function deleteService(serviceId) {
-    if (!confirm('Tem certeza que deseja excluir este fluxo?')) return;
-
-    try {
-        const response = await fetch(`${BASE_URL}/api/services/${serviceId}`, {
-            method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${token}` }
+async function deleteService(id){
+    if(!confirm('Deseja realmente excluir este fluxo?')) return;
+    const token = localStorage.getItem('token');
+    try{
+        const res = await fetch(`${BACKEND_URL}/api/services/${id}`,{
+            method:'DELETE',
+            headers:{'Authorization':`Bearer ${token}`}
         });
-        if (!response.ok) throw new Error('Falha ao excluir o fluxo.');
-        loadServices(); // Recarrega a lista
-    } catch (error) {
-        console.error('Erro ao deletar:', error);
-        alert(error.message);
-    }
+        const data = await res.json();
+        if(data.success) loadServices();
+        else alert(data.message);
+    }catch(err){console.error(err);}
 }
 
-// Carrega os serviços quando a página é aberta.
+async function editService(id){
+    const token = localStorage.getItem('token');
+    try{
+        const res = await fetch(`${BACKEND_URL}/api/services/${id}`,{
+            headers:{'Authorization':`Bearer ${token}`}
+        });
+        const service = await res.json();
+        if(!service.success) return alert('Erro ao carregar fluxo');
+
+        const label = prompt('Nome do Fluxo:', service.service.label);
+        if(label===null) return;
+        const description = prompt('Descrição:', service.service.description);
+        if(description===null) return;
+        const keywords = prompt('Palavras-chave (vírgula separados):', service.service.keywords.join(','));
+        if(keywords===null) return;
+
+        const updateRes = await fetch(`${BACKEND_URL}/api/services/${id}`,{
+            method:'PUT',
+            headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+            body: JSON.stringify({label,description,keywords:keywords.split(',').map(k=>k.trim())})
+        });
+        const updated = await updateRes.json();
+        if(updated.success) loadServices();
+        else alert(updated.message);
+
+    }catch(err){console.error(err);}
+}
+
 document.addEventListener('DOMContentLoaded', loadServices);
