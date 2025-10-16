@@ -23,6 +23,7 @@ WORKDIR /usr/src/app
 
 COPY package*.json ./
 
+# Pula download do Chromium se já estiver instalado
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 ENV NODE_ENV=production
 
@@ -32,7 +33,9 @@ COPY . .
 
 EXPOSE 10000
 
+# Usuário não-root
 RUN useradd -m appuser
 USER appuser
 
+# Inicia o servidor
 CMD ["node", "server.js"]
