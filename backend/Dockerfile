@@ -1,7 +1,7 @@
-# Use uma imagem oficial Node 20 com Puppeteer
+# Use Node 20 oficial
 FROM node:20-bullseye-slim
 
-# Configurações de Puppeteer/Chromium
+# Instala dependências necessárias para Puppeteer/Chromium
 RUN apt-get update && apt-get install -y \
     wget \
     ca-certificates \
@@ -16,28 +16,31 @@ RUN apt-get update && apt-get install -y \
     libxdamage1 \
     libxrandr2 \
     xdg-utils \
+    --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
-# Cria diretório da aplicação
+# Diretório da aplicação
 WORKDIR /usr/src/app
 
 # Copia package.json e package-lock.json
 COPY package*.json ./
 
-# Instala dependências, ignora devDependencies
+# Define variável para pular download do Chromium se já estiver instalado
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+ENV NODE_ENV=production
+
+# Instala dependências de produção
 RUN npm install --omit=dev
 
 # Copia todo o restante do app
 COPY . .
 
-# Define variáveis de ambiente essenciais para Render
-# Render define PORT automaticamente, mas é bom garantir
-ENV NODE_ENV=production
-ENV PORT=10000
-
-# Expõe a porta do Render
+# Expõe porta do Render (Render usará process.env.PORT)
 EXPOSE 10000
 
-# Comando para iniciar o app
-# Puppeteer precisa de args --no-sandbox
-CMD ["node", "-e", "process.env.PUPPETEER_SKIP_CHROMIUM_DOWNLOAD = 'true'; require('./server.js')"]
+# Cria usuário não-root (opcional, mais seguro)
+RUN useradd -m appuser
+USER appuser
+
+# Comando para iniciar o servidor
+CMD ["node", "server.js"]
